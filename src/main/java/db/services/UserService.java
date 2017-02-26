@@ -100,11 +100,22 @@ public class UserService {
         }
     }
 
+    public User updateUser(String about, String email, String fullname, String nickname) {
+        final String query = "UPDATE \"user\" SET about = ?, email = ?, fullname = ? WHERE nickname = ?";
+        final int rows = template.update(query, about, email, fullname, nickname);
+        if (rows == 0) {
+            LOGGER.info("Error update user profile because user with such nickname does not exist!");
+            return null;
+        }
+        return getUserByNickname(nickname);
+    }
+
     private final RowMapper<User> userMapper = (rs, rowNum) -> {
+        final int id = rs.getInt("id");
         final String about = rs.getString("about");
         final String nickname = rs.getString("nickname");
         final String fullname = rs.getString("fullname");
         final String email = rs.getString("email");
-        return new User(about, email,fullname, nickname);
+        return new User(id, about, email,fullname, nickname);
     };
 }

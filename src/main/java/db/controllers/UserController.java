@@ -31,7 +31,7 @@ public class UserController {
         this.userServ = userServ;
     }
 
-    @RequestMapping(path = "/", method = RequestMethod.GET)
+    @RequestMapping(path = "/api/user", method = RequestMethod.GET)
     public void createTable() {
         userServ.clearTable();
         userServ.createTable();
@@ -74,6 +74,34 @@ public class UserController {
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getUser(@PathVariable(value="nickname") String nickname) {
         final User user = userServ.getUserByNickname(nickname);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(UserDataResponse(user));
+    }
+
+    @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    public ResponseEntity updateUser(@PathVariable(value="nickname") String nickname, @RequestBody GetUserRequest body) {
+        String about = body.getAbout();
+        String email = body.getEmail();
+        String fullname = body.getFullname();
+        if (email != null) { //тут дичь какая-то
+            final User checkEmail = userServ.getUserByEmail(email);
+            if (checkEmail != null && !checkEmail.getNickname().equals(nickname)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("");
+            }
+        }
+        User currentUser = userServ.getUserByNickname(nickname);
+        if (email == null) {
+            email = currentUser.getEmail();
+        }
+        if (about == null){
+            about = currentUser.getAbout();
+        }
+        if (fullname == null) {
+            fullname = currentUser.getFullname();
+        }
+        final User user = userServ.updateUser(about, email, fullname, nickname);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
