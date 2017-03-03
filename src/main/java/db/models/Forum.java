@@ -15,6 +15,13 @@ public class Forum {
         this.userId = userId;
     }
 
+    public Forum(int id, String slug, String title, int userId) {
+        this.id = id;
+        this.slug = slug;
+        this.title = title;
+        this.userId = userId;
+    }
+
     public int getId() {
         return id;
     }

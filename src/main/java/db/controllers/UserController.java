@@ -25,11 +25,8 @@ import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 @RestController
 public class UserController {
-    private final UserService userServ;
-
-    public UserController(UserService userServ) {
-        this.userServ = userServ;
-    }
+    @Autowired
+    private UserService userServ;
 
     @RequestMapping(path = "/api/user", method = RequestMethod.GET)
     public void createTable() {
@@ -92,6 +89,9 @@ public class UserController {
             }
         }
         User currentUser = userServ.getUserByNickname(nickname);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
         if (email == null) {
             email = currentUser.getEmail();
         }

@@ -6,8 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
@@ -25,17 +27,14 @@ public class ForumService {
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(ForumService.class.getName());
 
-    @Autowired
-    private UserService userServ;
-
     public void clearTable() {
         final String dropTable = "DROP TABLE IF EXISTS forum CASCADE";
         template.execute(dropTable);
-        /*final String dropUniqueEmail = "DROP INDEX IF EXISTS unique_email";
-        template.execute(dropUniqueEmail);
-        final String dropUniqueNickname = "DROP INDEX IF EXISTS unique_nickname";
+        final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug";
+        template.execute(dropUniqueSlug);
+        /*final String dropUniqueNickname = "DROP INDEX IF EXISTS unique_nickname";
         template.execute(dropUniqueNickname);*/
-        LOGGER.info("Table forum was dropped");
+        LOGGER.info("Table forum dropped");
     }
 
     public void createTable() {
@@ -45,16 +44,15 @@ public class ForumService {
                 "title VARCHAR(100) NOT NULL UNIQUE," +
                 "user_id INT REFERENCES \"user\"(id))";
         template.execute(createTable);
-        /*final String createUniqueEmail = "CREATE UNIQUE INDEX unique_email ON \"user\" (LOWER(email))";
-        template.execute(createUniqueEmail);
-        final String createUniqueNickname = "CREATE UNIQUE INDEX unique_nickname ON \"user\" (LOWER(nickname))";
+        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug ON forum (LOWER(slug))";
+        template.execute(createUniqueSlug);
+        /*final String createUniqueNickname = "CREATE UNIQUE INDEX unique_nickname ON \"user\" (LOWER(nickname))";
         template.execute(createUniqueNickname);*/
         LOGGER.info("Table forum created!");
     }
 
-    public Forum create(String slug, String title, String user_nickname) {
-        final User user = userServ.getUserByNickname(user_nickname);
-        final Forum forum = new Forum(slug, title, user.getId());
+    public Forum create(String slug, String title, int userId) {
+        final Forum forum = new Forum(slug, title, userId);
         try {
             template.update(new ForumPst(forum));
         }
@@ -62,7 +60,7 @@ public class ForumService {
             LOGGER.info("Error creating forum - forum already exists!");
             return null;
         }
-        LOGGER.info("Forum with slug created", slug);
+        LOGGER.info("Forum with slug \"{}\" created", slug);
         return forum;
     }
 
@@ -80,4 +78,30 @@ public class ForumService {
             return pst;
         }
     }
+
+    public Forum getForumBySlug(String slug) {
+        try {
+            return template.queryForObject("SELECT * FROM forum WHERE LOWER (slug) = ?", forumMapper, slug.toLowerCase());
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public Forum getForumById(int id) {
+        try {
+            return template.queryForObject("SELECT * FROM forum WHERE id = ?", forumMapper, id);
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    private final RowMapper<Forum> forumMapper = (rs, rowNum) -> {
+        final int id = rs.getInt("id");
+        final String slug = rs.getString("slug");
+        final String title = rs.getString("title");
+        final int userId = rs.getInt("user_id");
+        return new Forum(id, slug, title, userId);
+    };
 }

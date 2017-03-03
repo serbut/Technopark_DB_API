@@ -35,7 +35,7 @@ public class UserService {
         template.execute(dropUniqueEmail);
         final String dropUniqueNickname = "DROP INDEX IF EXISTS unique_nickname";
         template.execute(dropUniqueNickname);
-        LOGGER.info("Table user was dropped");
+        LOGGER.info("Table user dropped");
     }
 
     public void createTable() {
@@ -94,6 +94,15 @@ public class UserService {
     public User getUserByEmail(String email) {
         try {
             return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (email) = ?", userMapper, email.toLowerCase());
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public User getUserById(int id) {
+        try {
+            return template.queryForObject("SELECT * FROM \"user\" WHERE id = ?", userMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;

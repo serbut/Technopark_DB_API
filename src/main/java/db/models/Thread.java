@@ -1,5 +1,6 @@
 package db.models;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 /**
@@ -7,33 +8,41 @@ import java.time.LocalDateTime;
  */
 public class Thread {
     private int id;
-    private int authorId;
-    private LocalDateTime created;
+    private int userId;
+    private Timestamp created;
     private int forumId;
     private String message;
     private String slug;
     private String title;
-    private int votes;
 
-    public Thread(int authorId, LocalDateTime created, int forumId, String message, String slug, String title, int votes) {
-        this.authorId = authorId;
+    public Thread(int userId, Timestamp created, int forumId, String message, String slug, String title) {
+        this.userId = userId;
         this.created = created;
         this.forumId = forumId;
         this.message = message;
         this.slug = slug;
         this.title = title;
-        this.votes = votes;
+    }
+
+    public Thread(int id, int userId, Timestamp created, int forumId, String message, String slug, String title) {
+        this.id = id;
+        this.userId = userId;
+        this.created = created;
+        this.forumId = forumId;
+        this.message = message;
+        this.slug = slug;
+        this.title = title;
     }
 
     public int getId() {
         return id;
     }
 
-    public int getAuthorId() {
-        return authorId;
+    public int getUserId() {
+        return userId;
     }
 
-    public LocalDateTime getCreated() {
+    public Timestamp getCreated() {
         return created;
     }
 
@@ -49,8 +58,7 @@ public class Thread {
         return slug;
     }
 
-    public int getVotes() {
-        return votes;
+    public String getTitle() {
+        return title;
     }
-
 }
