@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 public class Thread {
     private int id;
     private int userId;
-    private Timestamp created;
+    private String created;
     private int forumId;
     private String message;
     private String slug;
     private String title;
 
-    public Thread(int userId, Timestamp created, int forumId, String message, String slug, String title) {
+    public Thread(int userId, String created, int forumId, String message, String slug, String title) {
         this.userId = userId;
         this.created = created;
         this.forumId = forumId;
@@ -24,7 +24,7 @@ public class Thread {
         this.title = title;
     }
 
-    public Thread(int id, int userId, Timestamp created, int forumId, String message, String slug, String title) {
+    public Thread(int id, int userId, String created, int forumId, String message, String slug, String title) {
         this.id = id;
         this.userId = userId;
         this.created = created;
@@ -42,7 +42,7 @@ public class Thread {
         return userId;
     }
 
-    public Timestamp getCreated() {
+    public String getCreated() {
         return created;
     }
 

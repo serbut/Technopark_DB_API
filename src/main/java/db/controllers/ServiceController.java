@@ -30,6 +30,9 @@ public class ServiceController {
     }
     @RequestMapping(path = "/api/service/create", method = RequestMethod.GET)
     public void createAllTables() {
+        threadServ.clearTable();
+        userServ.clearTable();
+        forumServ.clearTable();
         userServ.createTable();
         forumServ.createTable();
         threadServ.createTable();

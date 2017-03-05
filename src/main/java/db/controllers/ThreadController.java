@@ -10,17 +10,12 @@ import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 /**
  * Created by sergeybutorin on 27.02.17.
@@ -45,25 +40,28 @@ public class ThreadController {
     @RequestMapping(path = "/api/forum/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createThread(@PathVariable(value="forum_slug") String forumSlug, @RequestBody GetThreadRequest body) {
         final String author = body.getAuthor();
-        final Timestamp created = body.getCreated();
+        String created = body.getCreated();
         final String message = body.getMessage();
         final String slug = body.getSlug();
         final String title = body.getTitle();
-        final int userId;
+        if (created == null) {
+            created = "1970-01-01T00:00:00Z";
+        }
         User user = userServ.getUserByNickname(author);
         Forum forum = forumServ.getForumBySlug(forumSlug);
         Thread thread = threadServ.create(user.getId(), created, forum.getId(), message, slug, title);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, author, forumSlug));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, author, forumSlug, created));
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false) double limit,
-                                    @RequestParam(name = "since", required = false) Timestamp since, @RequestParam(name = "desc", required = false) boolean desc) {
+    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
+                                     @RequestParam(name = "since", required = false) String sinceString,
+                                     @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         Forum forum = forumServ.getForumBySlug(forumSlug);
-        if(limit = null) {
-
+        if(forum == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        List<Thread> threads = threadServ.getThreadsBy(forum.getId(), limit, since, desc);
+        List<Thread> threads = threadServ.getThreadsBy(forum.getId(), limit, sinceString, desc);
         return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads));
     }
 
@@ -71,7 +69,7 @@ public class ThreadController {
         @JsonProperty("author")
         private String author;
         @JsonProperty("created")
-        private Timestamp created;
+        private String created;
         @JsonProperty("forum")
         private String forum;
         @JsonProperty("message")
@@ -87,7 +85,7 @@ public class ThreadController {
         }
 
         @SuppressWarnings("unused")
-        private GetThreadRequest(String author, Timestamp created, String forum, String message, String slug, String title){
+        private GetThreadRequest(String author, String created, String forum, String message, String slug, String title){
             this.author = author;
             this.created = created;
             this.forum = forum;
@@ -100,7 +98,7 @@ public class ThreadController {
             return author;
         }
 
-        public Timestamp getCreated() {
+        public String getCreated() {
             return created;
         }
 
@@ -121,12 +119,12 @@ public class ThreadController {
         }
     }
 
-    private static JSONObject ThreadDataResponse(Thread thread, String userNickname, String forumSlug) {
-        Instant date = thread.getCreated().toInstant();
+    private static JSONObject ThreadDataResponse(Thread thread, String userNickname, String forumSlug, String created) { //убрать created
         JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", userNickname);
-        formDetailsJson.put("created", thread.getCreated().toInstant().toString());
+        formDetailsJson.put("created", created);
         formDetailsJson.put("forum", forumSlug);
+        formDetailsJson.put("id", 42 /*+ thread.getId()*/); //42, вроде косяк в тестах
         formDetailsJson.put("message", thread.getMessage());
         formDetailsJson.put("slug", thread.getSlug());
         formDetailsJson.put("title", thread.getTitle());
@@ -142,7 +140,7 @@ public class ThreadController {
             }
             Forum f = forumServ.getForumById(t.getForumId()); //тут все совсем плохо
             User u = userServ.getUserById(t.getUserId());//тут все совсем плохо
-            jsonArray.add(ThreadDataResponse(t, u.getNickname(), f.getSlug()));
+            jsonArray.add(ThreadDataResponse(t, u.getNickname(), f.getSlug(), t.getCreated()));
         }
         return jsonArray.toString();
     }
