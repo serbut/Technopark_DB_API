@@ -5,9 +5,9 @@ package db.models;
  */
 public class Forum {
     private int id;
-    private String slug;
-    private String title;
-    private int userId;
+    private final String slug;
+    private final String title;
+    private final int userId;
 
     public Forum(String slug, String title, int userId) {
         this.slug = slug;

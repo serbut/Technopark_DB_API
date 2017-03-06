@@ -23,7 +23,7 @@ import java.sql.SQLException;
 @Service
 public class UserService {
     private final JdbcTemplate template;
-    public UserService(JdbcTemplate template) {
+    private UserService(JdbcTemplate template) {
         this.template = template;
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());

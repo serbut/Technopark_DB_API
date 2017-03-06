@@ -6,16 +6,13 @@ import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.*;
 
 import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
@@ -24,14 +21,14 @@ import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
  */
 
 @RestController
-public class UserController {
+class UserController {
     @Autowired
-    private UserService userServ;
+    private UserService userService;
 
     @RequestMapping(path = "/api/user", method = RequestMethod.GET)
     public void createTable() {
-        userServ.clearTable();
-        userServ.createTable();
+        userService.clearTable();
+        userService.createTable();
     }
 
     @RequestMapping(path = "/api/user/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -43,12 +40,12 @@ public class UserController {
                 || StringUtils.isEmpty(nickname)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Wrong parameters");
         }
-        User user = userServ.create(about, email, fullname, nickname);
+        User user = userService.create(about, email, fullname, nickname);
         if (user == null) {
-            final List<User> duplicates = new ArrayList<User>();
+            final List<User> duplicates = new ArrayList<>();
             String dupEmail = null;
             try {
-                user = userServ.getUserByNickname(nickname);
+                user = userService.getUserByNickname(nickname);
                 duplicates.add(user);
                 dupEmail = user.getEmail();
             }
@@ -57,7 +54,7 @@ public class UserController {
             }
             if (dupEmail != null && !(email.toLowerCase()).equals(dupEmail.toLowerCase()) || dupEmail == null) { //если email найденного пользователя совпадает, то нового искать не надо
                 try {
-                    duplicates.add(userServ.getUserByEmail(email));
+                    duplicates.add(userService.getUserByEmail(email));
                 } catch (NullPointerException e) {
                     LOGGER.info("There is no user with such email");
                 }
@@ -70,7 +67,7 @@ public class UserController {
 
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getUser(@PathVariable(value="nickname") String nickname) {
-        final User user = userServ.getUserByNickname(nickname);
+        final User user = userService.getUserByNickname(nickname);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
@@ -83,12 +80,12 @@ public class UserController {
         String email = body.getEmail();
         String fullname = body.getFullname();
         if (email != null) { //тут дичь какая-то
-            final User checkEmail = userServ.getUserByEmail(email);
+            final User checkEmail = userService.getUserByEmail(email);
             if (checkEmail != null && !checkEmail.getNickname().equals(nickname)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("");
             }
         }
-        User currentUser = userServ.getUserByNickname(nickname);
+        User currentUser = userService.getUserByNickname(nickname);
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
@@ -101,7 +98,7 @@ public class UserController {
         if (fullname == null) {
             fullname = currentUser.getFullname();
         }
-        final User user = userServ.updateUser(about, email, fullname, nickname);
+        final User user = userService.updateUser(about, email, fullname, nickname);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }

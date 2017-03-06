@@ -4,6 +4,7 @@ import db.models.Thread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
@@ -24,7 +25,7 @@ import java.util.TimeZone;
 public class ThreadService {
     private final JdbcTemplate template;
 
-    public ThreadService(JdbcTemplate template) {
+    private ThreadService(JdbcTemplate template) {
         this.template = template;
     }
 
@@ -54,14 +55,32 @@ public class ThreadService {
         try {
             template.update(new ThreadCreatePst(thread));
         } catch (DuplicateKeyException e) {
-            LOGGER.info("Error creating forum - forum already exists!");
+            LOGGER.info("Error creating thread - thread already exists!");
             return null;
         }
-        LOGGER.info("Forum with slug \"{}\" created", slug);
+        LOGGER.info("Thread with title \"{}\" created", title);
         return thread;
     }
 
-    public List<Thread> getThreadsBy(int forumId, double limit, String sinceString, boolean desc) {
+    public Thread getThreadBySlug(String slug) {
+        try {
+            return template.queryForObject("SELECT * FROM thread WHERE LOWER (slug) = ?", threadMapper, slug.toLowerCase());
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public Thread getThreadById(int id) {
+        try {
+            return template.queryForObject("SELECT * FROM thread WHERE id = ?", threadMapper, id);
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    public List<Thread> getThreads(int forumId, double limit, String sinceString, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
         params.add(forumId);
         String sort, createdSign, sinceCreated = "";

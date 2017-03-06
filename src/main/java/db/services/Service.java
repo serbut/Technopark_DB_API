@@ -5,5 +5,5 @@ package db.services;
  */
 
 
-public class Service {
+class Service {
 }

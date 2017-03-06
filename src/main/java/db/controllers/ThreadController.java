@@ -21,20 +21,20 @@ import java.util.List;
  * Created by sergeybutorin on 27.02.17.
  */
 @RestController
-public class ThreadController {
+class ThreadController {
     @Autowired
-    private ThreadService threadServ;
+    private ThreadService threadService;
 
     @Autowired
-    private UserService userServ;
+    private UserService userService;
 
     @Autowired
-    private ForumService forumServ;
+    private ForumService forumService;
 
     @RequestMapping(path = "/api/thread", method = RequestMethod.GET)
     public void createTable() {
-        threadServ.clearTable();
-        threadServ.createTable();
+        threadService.clearTable();
+        threadService.createTable();
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -47,9 +47,9 @@ public class ThreadController {
         if (created == null) {
             created = "1970-01-01T00:00:00Z";
         }
-        User user = userServ.getUserByNickname(author);
-        Forum forum = forumServ.getForumBySlug(forumSlug);
-        Thread thread = threadServ.create(user.getId(), created, forum.getId(), message, slug, title);
+        User user = userService.getUserByNickname(author);
+        Forum forum = forumService.getForumBySlug(forumSlug);
+        Thread thread = threadService.create(user.getId(), created, forum.getId(), message, slug, title);
         return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, author, forumSlug, created));
     }
 
@@ -57,11 +57,11 @@ public class ThreadController {
     public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-        Forum forum = forumServ.getForumBySlug(forumSlug);
+        Forum forum = forumService.getForumBySlug(forumSlug);
         if(forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        List<Thread> threads = threadServ.getThreadsBy(forum.getId(), limit, sinceString, desc);
+        List<Thread> threads = threadService.getThreads(forum.getId(), limit, sinceString, desc);
         return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads));
     }
 
@@ -124,7 +124,7 @@ public class ThreadController {
         formDetailsJson.put("author", userNickname);
         formDetailsJson.put("created", created);
         formDetailsJson.put("forum", forumSlug);
-        formDetailsJson.put("id", 42 /*+ thread.getId()*/); //42, вроде косяк в тестах
+        formDetailsJson.put("id", /*42 + */thread.getId()); //42, вроде косяк в тестах
         formDetailsJson.put("message", thread.getMessage());
         formDetailsJson.put("slug", thread.getSlug());
         formDetailsJson.put("title", thread.getTitle());
@@ -138,8 +138,8 @@ public class ThreadController {
             if (t == null) {
                 continue;
             }
-            Forum f = forumServ.getForumById(t.getForumId()); //тут все совсем плохо
-            User u = userServ.getUserById(t.getUserId());//тут все совсем плохо
+            Forum f = forumService.getForumById(t.getForumId()); //тут все совсем плохо
+            User u = userService.getUserById(t.getUserId());//тут все совсем плохо
             jsonArray.add(ThreadDataResponse(t, u.getNickname(), f.getSlug(), t.getCreated()));
         }
         return jsonArray.toString();

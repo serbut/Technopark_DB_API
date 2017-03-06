@@ -5,10 +5,10 @@ package db.models;
  */
 public class User {
     private int id;
-    private String about;
-    private String email;
-    private String fullname;
-    private String nickname; //добавить ограничения: Данное поле допускает только латиницу, цифры и знак подчеркивания. Сравнение имени регистронезависимо.
+    private final String about;
+    private final String email;
+    private final String fullname;
+    private final String nickname; //добавить ограничения: Данное поле допускает только латиницу, цифры и знак подчеркивания. Сравнение имени регистронезависимо.
 
     public User(String about, String email, String fullname, String nickname) {
         this.about = about;
