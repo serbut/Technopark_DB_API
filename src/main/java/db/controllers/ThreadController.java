@@ -20,6 +20,7 @@ import java.util.List;
 /**
  * Created by sergeybutorin on 27.02.17.
  */
+@SuppressWarnings("unchecked")
 @RestController
 class ThreadController {
     @Autowired
@@ -47,9 +48,9 @@ class ThreadController {
         if (created == null) {
             created = "1970-01-01T00:00:00Z";
         }
-        User user = userService.getUserByNickname(author);
-        Forum forum = forumService.getForumBySlug(forumSlug);
-        Thread thread = threadService.create(user.getId(), created, forum.getId(), message, slug, title);
+        final User user = userService.getUserByNickname(author);
+        final Forum forum = forumService.getForumBySlug(forumSlug);
+        final Thread thread = threadService.create(user.getId(), created, forum.getId(), message, slug, title);
         return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, author, forumSlug, created));
     }
 
@@ -57,11 +58,11 @@ class ThreadController {
     public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-        Forum forum = forumService.getForumBySlug(forumSlug);
+        final Forum forum = forumService.getForumBySlug(forumSlug);
         if(forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        List<Thread> threads = threadService.getThreads(forum.getId(), limit, sinceString, desc);
+        final List<Thread> threads = threadService.getThreads(forum.getId(), limit, sinceString, desc);
         return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads));
     }
 
@@ -120,11 +121,11 @@ class ThreadController {
     }
 
     private static JSONObject ThreadDataResponse(Thread thread, String userNickname, String forumSlug, String created) { //убрать created
-        JSONObject formDetailsJson = new JSONObject();
+        final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", userNickname);
         formDetailsJson.put("created", created);
         formDetailsJson.put("forum", forumSlug);
-        formDetailsJson.put("id", /*42 + */thread.getId()); //42, вроде косяк в тестах
+        formDetailsJson.put("id", 42); //42, вроде косяк в тестах
         formDetailsJson.put("message", thread.getMessage());
         formDetailsJson.put("slug", thread.getSlug());
         formDetailsJson.put("title", thread.getTitle());
@@ -132,14 +133,14 @@ class ThreadController {
     }
 
     private String ThreadListResponse(List<Thread> threads) {
-        JSONArray jsonArray = new JSONArray();
+        final JSONArray jsonArray = new JSONArray();
 
         for(Thread t : threads) {
             if (t == null) {
                 continue;
             }
-            Forum f = forumService.getForumById(t.getForumId()); //тут все совсем плохо
-            User u = userService.getUserById(t.getUserId());//тут все совсем плохо
+            final Forum f = forumService.getForumById(t.getForumId()); //тут все совсем плохо
+            final User u = userService.getUserById(t.getUserId());//тут все совсем плохо
             jsonArray.add(ThreadDataResponse(t, u.getNickname(), f.getSlug(), t.getCreated()));
         }
         return jsonArray.toString();

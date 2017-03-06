@@ -22,7 +22,7 @@ import java.util.TimeZone;
  * Created by sergeybutorin on 27.02.17.
  */
 @Service
-public class ThreadService {
+public final class ThreadService {
     private final JdbcTemplate template;
 
     private ThreadService(JdbcTemplate template) {
@@ -83,7 +83,9 @@ public class ThreadService {
     public List<Thread> getThreads(int forumId, double limit, String sinceString, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
         params.add(forumId);
-        String sort, createdSign, sinceCreated = "";
+        final String sort;
+        final String createdSign;
+        String sinceCreated = "";
         if (desc) {
             sort = "DESC";
             createdSign = "<=";
@@ -93,7 +95,7 @@ public class ThreadService {
         }
         if (sinceString != null) {
             sinceCreated = "? AND created " + createdSign;
-            Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
+            final Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
             params.add(since);
         }
         final String query = "SELECT * FROM thread WHERE forum_id = " + sinceCreated + "? ORDER BY created " + sort + " LIMIT ?";

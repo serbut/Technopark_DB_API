@@ -3,6 +3,7 @@ package db.services;
 import db.models.Forum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,7 +19,7 @@ import java.sql.SQLException;
  * Created by sergey on 26.02.17.
  */
 @Service
-public class ForumService {
+public final class ForumService {
     private final JdbcTemplate template;
     private ForumService(JdbcTemplate template) {
         this.template = template;
@@ -30,8 +31,6 @@ public class ForumService {
         template.execute(dropTable);
         final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug";
         template.execute(dropUniqueSlug);
-        /*final String dropUniqueNickname = "DROP INDEX IF EXISTS unique_nickname";
-        template.execute(dropUniqueNickname);*/
         LOGGER.info("Table forum dropped");
     }
 
@@ -40,25 +39,16 @@ public class ForumService {
                 "id SERIAL NOT NULL PRIMARY KEY," +
                 "slug VARCHAR(100)," +
                 "title VARCHAR(100) NOT NULL UNIQUE," +
-                "user_id INT REFERENCES \"user\"(id))";
+                "user_id INT REFERENCES \"user\"(id) NOT NULL)";
         template.execute(createTable);
         final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug ON forum (LOWER(slug))";
         template.execute(createUniqueSlug);
-        /*final String createUniqueNickname = "CREATE UNIQUE INDEX unique_nickname ON \"user\" (LOWER(nickname))";
-        template.execute(createUniqueNickname);*/
         LOGGER.info("Table forum created!");
     }
 
-    public Forum create(String slug, String title, int userId) {
-        final Forum forum = new Forum(slug, title, userId);
-        try {
-            template.update(new ForumPst(forum));
-        }
-        catch (DuplicateKeyException e) {
-            LOGGER.info("Error creating forum - forum already exists!");
-            return null;
-        }
-        LOGGER.info("Forum with slug \"{}\" created", slug);
+    public Forum create(Forum forum) {
+        template.update(new ForumPst(forum));
+        LOGGER.info("Forum with slug \"{}\" created", forum.getSlug());
         return forum;
     }
 
@@ -68,18 +58,20 @@ public class ForumService {
             this.forum = forum;
         }
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO forum (slug, title, user_id) VALUES (?, ?, ?)";
+            final String query = "INSERT INTO forum (slug, title, user_id) VALUES (?, ?, (" +
+                    "SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)))";
             final PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, forum.getSlug());
             pst.setString(2, forum.getTitle());
-            pst.setInt(3, forum.getUserId());
+            pst.setString(3, forum.getUser());
             return pst;
         }
     }
 
     public Forum getForumBySlug(String slug) {
         try {
-            return template.queryForObject("SELECT * FROM forum WHERE LOWER (slug) = ?", forumMapper, slug.toLowerCase());
+            return template.queryForObject("SELECT f.id, slug, title, nickname FROM forum f " +
+                    "JOIN \"user\" u ON (u.id = f.user_id) WHERE LOWER (slug) = ?", forumMapper, slug.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -88,7 +80,8 @@ public class ForumService {
 
     public Forum getForumById(int id) {
         try {
-            return template.queryForObject("SELECT * FROM forum WHERE id = ?", forumMapper, id);
+            return template.queryForObject("SELECT f.id, slug, title, nickname FROM forum f " +
+                    "JOIN \"user\" u ON (u.id = f.user_id) WHERE id = ?", forumMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -99,7 +92,7 @@ public class ForumService {
         final int id = rs.getInt("id");
         final String slug = rs.getString("slug");
         final String title = rs.getString("title");
-        final int userId = rs.getInt("user_id");
-        return new Forum(id, slug, title, userId);
+        final String userNickname = rs.getString("nickname");
+        return new Forum(id, slug, title, userNickname);
     };
 }

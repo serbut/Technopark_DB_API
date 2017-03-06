@@ -20,6 +20,7 @@ import java.util.List;
 /**
  * Created by sergey on 05.03.17.
  */
+@SuppressWarnings("unchecked")
 @RestController
 class PostController {
     @Autowired
@@ -41,13 +42,13 @@ class PostController {
             String created = postBody.getCreated();
             //String forumSlug = postBody.getForum();
             final String message = postBody.getMessage();
-            boolean isEdited = postBody.getIsEdited();
+            final boolean isEdited = postBody.getIsEdited();
             if (created == null) {
                 created = "1970-01-01T00:00:00Z";
             }
-            User user = userService.getUserByNickname(author);
-            Thread thread = threadService.getThreadById(Integer.parseInt(threadId));
-            Post post = postService.create(user.getId(), created, thread.getForumId(), message, isEdited, Integer.parseInt(threadId));
+            final User user = userService.getUserByNickname(author);
+            final Thread thread = threadService.getThreadById(Integer.parseInt(threadId));
+            final Post post = postService.create(user.getId(), created, thread.getForumId(), message, isEdited, Integer.parseInt(threadId));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body("");
     }
@@ -106,7 +107,7 @@ class PostController {
     }
 
     private static JSONObject PostDataResponse(Post post, String userNickname, String forumSlug, int thread) {
-        JSONObject formDetailsJson = new JSONObject();
+        final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", userNickname);
         formDetailsJson.put("created", post.getCreated());
         formDetailsJson.put("forum", forumSlug);

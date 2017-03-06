@@ -21,7 +21,7 @@ import java.sql.SQLException;
  */
 
 @Service
-public class UserService {
+public final class UserService {
     private final JdbcTemplate template;
     private UserService(JdbcTemplate template) {
         this.template = template;

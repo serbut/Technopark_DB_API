@@ -7,19 +7,19 @@ public class Forum {
     private int id;
     private final String slug;
     private final String title;
-    private final int userId;
+    private final String user;
 
-    public Forum(String slug, String title, int userId) {
+    public Forum(String slug, String title, String user) {
         this.slug = slug;
         this.title = title;
-        this.userId = userId;
+        this.user = user;
     }
 
-    public Forum(int id, String slug, String title, int userId) {
+    public Forum(int id, String slug, String title, String user) {
         this.id = id;
         this.slug = slug;
         this.title = title;
-        this.userId = userId;
+        this.user = user;
     }
 
     public int getId() {
@@ -34,7 +34,7 @@ public class Forum {
         return title;
     }
 
-    public int getUserId() {
-        return userId;
+    public String getUser() {
+        return user;
     }
 }

@@ -6,6 +6,8 @@ import db.services.ForumService;
 import db.services.UserService;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,7 @@ import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 /**
  * Created by sergey on 26.02.17.
  */
+@SuppressWarnings("unchecked")
 @RestController
 class ForumController {
     @Autowired
@@ -34,26 +37,27 @@ class ForumController {
         final String slug = body.getSlug();
         final String title = body.getTitle();
         String userNickname = body.getUser();
-        final int userId;
+        Forum forum = null;
         try {
-            userId = userService.getUserByNickname(userNickname).getId();
+            userNickname = userService.getUserByNickname(userNickname).getNickname();//убрать это
+            forum = forumService.create(new Forum(slug, title, userNickname));
         }
-        catch (NullPointerException e) {
+        catch (NullPointerException e) { //убрать это
+            LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        Forum forum = forumService.create(slug, title, userId);
-        if (forum == null) {
-            try {
-                forum = forumService.getForumBySlug(slug);
-                userNickname = userService.getUserById(forum.getUserId()).getNickname();
-            }
-            catch (NullPointerException e) {
-                LOGGER.info("There is no forum with such slug");
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum, userNickname));
+        catch (DuplicateKeyException e) {
+            LOGGER.info("Error creating forum - forum already exists!");
         }
-        userNickname = userService.getUserByNickname(userNickname).getNickname();
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumDataResponse(forum, userNickname));
+        catch (DataAccessException e) {
+            LOGGER.info("Error creating forum - user not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        if (forum == null) {
+            forum = forumService.getForumBySlug(slug);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(ForumDataResponse(forum));
     }
 
     @RequestMapping(path = "/api/forum/{slug}/details", method = RequestMethod.GET, produces = "application/json")
@@ -62,8 +66,7 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        final String userNickname = userService.getUserById(forum.getUserId()).getNickname();
-        return ResponseEntity.status(HttpStatus.OK).body(ForumDataResponse(forum, userNickname));
+        return ResponseEntity.status(HttpStatus.OK).body(ForumDataResponse(forum));
     }
 
 
@@ -99,11 +102,11 @@ class ForumController {
         }
     }
 
-    private static JSONObject ForumDataResponse(Forum forum, String userNickname) {
-        JSONObject formDetailsJson = new JSONObject();
+    private static JSONObject ForumDataResponse(Forum forum) {
+        final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("slug", forum.getSlug());
         formDetailsJson.put("title", forum.getTitle());
-        formDetailsJson.put("user", userNickname);
+        formDetailsJson.put("user", forum.getUser());
         return formDetailsJson;
     }
 }

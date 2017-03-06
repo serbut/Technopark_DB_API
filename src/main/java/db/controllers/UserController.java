@@ -20,6 +20,7 @@ import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
  * Created by sergeybutorin on 20.02.17.
  */
 
+@SuppressWarnings("unchecked")
 @RestController
 class UserController {
     @Autowired
@@ -33,9 +34,9 @@ class UserController {
 
     @RequestMapping(path = "/api/user/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody GetUserRequest body) {
-        String about = body.getAbout();
-        String email = body.getEmail();
-        String fullname = body.getFullname();
+        final String about = body.getAbout();
+        final String email = body.getEmail();
+        final String fullname = body.getFullname();
         if (StringUtils.isEmpty(email)
                 || StringUtils.isEmpty(nickname)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Wrong parameters");
@@ -85,7 +86,7 @@ class UserController {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("");
             }
         }
-        User currentUser = userService.getUserByNickname(nickname);
+        final User currentUser = userService.getUserByNickname(nickname);
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
@@ -145,7 +146,7 @@ class UserController {
     }
 
     private static JSONObject UserDataResponse(User user) {
-        JSONObject formDetailsJson = new JSONObject();
+        final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("about", user.getAbout());
         formDetailsJson.put("email", user.getEmail());
         formDetailsJson.put("fullname", user.getFullname());
@@ -154,7 +155,7 @@ class UserController {
     }
 
     private static String UserListResponse(List<User> users) {
-        JSONArray jsonArray = new JSONArray();
+        final JSONArray jsonArray = new JSONArray();
 
         for(User u : users) {
             if (u == null) {

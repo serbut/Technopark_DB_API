@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
  * Created by sergey on 05.03.17.
  */
 @Service
-public class PostService {
+public final class PostService {
     private final JdbcTemplate template;
 
     private PostService(JdbcTemplate template) {
