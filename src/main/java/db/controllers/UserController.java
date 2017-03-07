@@ -6,6 +6,8 @@ import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -77,30 +79,19 @@ class UserController {
 
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public ResponseEntity updateUser(@PathVariable(value="nickname") String nickname, @RequestBody GetUserRequest body) {
-        String about = body.getAbout();
-        String email = body.getEmail();
-        String fullname = body.getFullname();
-        if (email != null) { //тут дичь какая-то
-            final User checkEmail = userService.getUserByEmail(email);
-            if (checkEmail != null && !checkEmail.getNickname().equals(nickname)) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("");
-            }
+        final String about = body.getAbout();
+        final String email = body.getEmail();
+        final String fullname = body.getFullname();
+        final User user;
+        try {
+             user = userService.updateUser(about, email, fullname, nickname);
         }
-        final User currentUser = userService.getUserByNickname(nickname);
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        catch (DuplicateKeyException e) {
+            LOGGER.info("Error updating user - duplicate values exists!");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("");
         }
-        if (email == null) {
-            email = currentUser.getEmail();
-        }
-        if (about == null){
-            about = currentUser.getAbout();
-        }
-        if (fullname == null) {
-            fullname = currentUser.getFullname();
-        }
-        final User user = userService.updateUser(about, email, fullname, nickname);
         if (user == null) {
+            LOGGER.info("Error updating user - user doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(UserDataResponse(user));

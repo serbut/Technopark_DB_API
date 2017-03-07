@@ -110,7 +110,11 @@ public final class UserService {
     }
 
     public User updateUser(String about, String email, String fullname, String nickname) {
-        final String query = "UPDATE \"user\" SET about = ?, email = ?, fullname = ? WHERE nickname = ?";
+        final String query = "UPDATE \"user\" SET " +
+                "about = COALESCE (?, about), " +
+                "email = COALESCE (?, email), " +
+                "fullname = COALESCE (?, fullname)" +
+                "WHERE LOWER (nickname) = LOWER (?)";
         final int rows = template.update(query, about, email, fullname, nickname);
         if (rows == 0) {
             LOGGER.info("Error update user profile because user with such nickname does not exist!");

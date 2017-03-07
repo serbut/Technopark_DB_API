@@ -48,14 +48,12 @@ class ForumController {
         }
         catch (DuplicateKeyException e) {
             LOGGER.info("Error creating forum - forum already exists!");
+            forum = forumService.getForumBySlug(slug);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum));
         }
         catch (DataAccessException e) {
             LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
-        }
-        if (forum == null) {
-            forum = forumService.getForumBySlug(slug);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(ForumDataResponse(forum));
     }

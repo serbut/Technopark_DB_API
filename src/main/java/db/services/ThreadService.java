@@ -40,9 +40,9 @@ public final class ThreadService {
     public void createTable() {
         final String createTable = "CREATE TABLE IF NOT EXISTS  thread (" +
                 "id SERIAL NOT NULL PRIMARY KEY," +
-                "user_id INT REFERENCES \"user\"(id)," +
+                "user_id INT REFERENCES \"user\"(id) NOT NULL," +
                 "created TIMESTAMP," +
-                "forum_id INT REFERENCES forum(id)," +
+                "forum_id INT REFERENCES forum(id) NOT NULL," +
                 "message TEXT," +
                 "slug VARCHAR(100)," +
                 "title VARCHAR(100) NOT NULL UNIQUE)";

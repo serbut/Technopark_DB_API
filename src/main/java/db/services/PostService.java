@@ -38,13 +38,13 @@ public final class PostService {
     public void createTable() {
         final String createTable = "CREATE TABLE IF NOT EXISTS  post (" +
                 "id SERIAL NOT NULL PRIMARY KEY," +
-                "user_id INT REFERENCES \"user\"(id)," +
+                "user_id INT REFERENCES \"user\"(id) NOT NULL ," +
                 "created TIMESTAMP," +
-                "forum_id INT REFERENCES forum(id)," +
+                "forum_id INT REFERENCES forum(id) NOT NULL ," +
                 "isEdited BOOLEAN DEFAULT FALSE," +
                 "message TEXT," +
                 "parent_id INT REFERENCES post(id) DEFAULT 0," +
-                "thread_id INT REFERENCES thread(id))";
+                "thread_id INT REFERENCES thread(id) NOT NULL)";
         template.execute(createTable);
         LOGGER.info("Table post created!");
     }
