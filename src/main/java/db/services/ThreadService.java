@@ -50,21 +50,24 @@ public final class ThreadService {
         LOGGER.info("Table thread created!");
     }
 
-    public Thread create(int userId, String created, int forumId, String message, String slug, String title) {
-        final Thread thread = new Thread(userId, created, forumId, message, slug, title);
+    public Thread create(Thread thread) {
         try {
             template.update(new ThreadCreatePst(thread));
+            thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", threadIdMapper)); //возможно от этого можно избавиться
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating thread - thread already exists!");
             return null;
         }
-        LOGGER.info("Thread with title \"{}\" created", title);
+        LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
         return thread;
     }
 
     public Thread getThreadBySlug(String slug) {
         try {
-            return template.queryForObject("SELECT * FROM thread WHERE LOWER (slug) = ?", threadMapper, slug.toLowerCase());
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+                    "JOIN forum f ON (t.forum_id=f.id)" +
+                    "JOIN \"user\" u ON (u.id = t.user_id)" +
+                    "WHERE LOWER (t.slug) = ?", threadMapper, slug.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -73,19 +76,22 @@ public final class ThreadService {
 
     public Thread getThreadById(int id) {
         try {
-            return template.queryForObject("SELECT * FROM thread WHERE id = ?", threadMapper, id);
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+                    "JOIN forum f ON (t.forum_id = f.id)" +
+                    "JOIN \"user\" u ON (u.id = t.user_id)" +
+                    "WHERE (t.id) = ?", threadMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
-    public List<Thread> getThreads(int forumId, double limit, String sinceString, boolean desc) {
+    public List<Thread> getThreads(String forumSlug, double limit, String sinceString, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
-        params.add(forumId);
+        params.add(forumSlug);
         final String sort;
         final String createdSign;
-        String sinceCreated = "";
+        String sinceCreated = ""; //переписать на StringBuilder
         if (desc) {
             sort = "DESC";
             createdSign = "<=";
@@ -94,11 +100,13 @@ public final class ThreadService {
             createdSign = ">=";
         }
         if (sinceString != null) {
-            sinceCreated = "? AND created " + createdSign;
+            sinceCreated = "WHERE created " + createdSign + " ?";
             final Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
             params.add(since);
         }
-        final String query = "SELECT * FROM thread WHERE forum_id = " + sinceCreated + "? ORDER BY created " + sort + " LIMIT ?";
+        final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+                "JOIN forum f ON (t.forum_id = f.id AND f.slug = ?)" +
+                "JOIN \"user\" u ON (u.id = t.user_id)" + sinceCreated + " ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);
         return template.query(query, threadMapper, params.toArray());
     }
@@ -111,11 +119,13 @@ public final class ThreadService {
         }
 
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (?, ?, ?, ?, ?, ?)";
+            final String query = "INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
+                    "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
+                    "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?)";
             final PreparedStatement pst = con.prepareStatement(query);
-            pst.setInt(1, thread.getUserId());
+            pst.setString(1, thread.getAuthor());
             pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
-            pst.setInt(3, thread.getForumId());
+            pst.setString(3, thread.getForum());
             pst.setString(4, thread.getMessage());
             pst.setString(5, thread.getSlug());
             pst.setString(6, thread.getTitle());
@@ -123,16 +133,18 @@ public final class ThreadService {
         }
     }
 
+    private final RowMapper<Integer> threadIdMapper = (rs, rowNum) -> rs.getInt("currval");
+
     private final RowMapper<Thread> threadMapper = (rs, rowNum) -> {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+03:00"));
         final int id = rs.getInt("id");
-        final int userId = rs.getInt("user_id");
+        final String author = rs.getString("nickname");
         final Timestamp created = rs.getTimestamp("created");
-        final int forumId = rs.getInt("forum_id");
+        final String forum = rs.getString("forum_slug");
         final String message = rs.getString("message");
         final String slug = rs.getString("slug");
         final String title = rs.getString("title");
-        return new Thread(id, userId, dateFormat.format(created), forumId, message, slug, title);
+        return new Thread(id, author, dateFormat.format(created), forum, message, slug, title);
     };
 }

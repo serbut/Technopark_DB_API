@@ -9,12 +9,16 @@ import db.services.ForumService;
 import db.services.PostService;
 import db.services.ThreadService;
 import db.services.UserService;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,22 +39,31 @@ class PostController {
     @Autowired
     private PostService postService;
 
-    @RequestMapping(path = "/api/thread/{thread_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createPost(@PathVariable(value="thread_id") String threadId, @RequestBody List<GetPostRequest> body) {
+    @RequestMapping(path = "/api/thread/{thread}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> createPost(@PathVariable(value="thread") String threadSlugOrId, @RequestBody List<GetPostRequest> body) {
+        int threadId = -1;
+        Thread t;
+        try {
+            threadId = Integer.parseInt(threadSlugOrId);
+            t = threadService.getThreadById(threadId);
+        } catch(NumberFormatException e) {
+            t = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        List<Post> posts = new ArrayList<>();
         for(GetPostRequest postBody: body) {
             final String author = postBody.getAuthor();
             String created = postBody.getCreated();
-            //String forumSlug = postBody.getForum();
             final String message = postBody.getMessage();
             final boolean isEdited = postBody.getIsEdited();
             if (created == null) {
-                created = "1970-01-01T00:00:00Z";
+                LocalDateTime a = LocalDateTime.now();
+                created = a.toString() + "+03:00"; // получить актуальное время
             }
-            final User user = userService.getUserByNickname(author);
-            final Thread thread = threadService.getThreadById(Integer.parseInt(threadId));
-            final Post post = postService.create(user.getId(), created, thread.getForumId(), message, isEdited, Integer.parseInt(threadId));
+            final Post post = postService.create(new Post(author, created, message, isEdited, t.getId()));
+            post.setForum(t.getForum());
+            posts.add(post);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body("");
+        return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts));
     }
 
     private static final class GetPostRequest {
@@ -106,16 +119,28 @@ class PostController {
         }
     }
 
-    private static JSONObject PostDataResponse(Post post, String userNickname, String forumSlug, int thread) {
+    private static JSONObject PostDataResponse(Post post, String created) { //убрать created
         final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("author", userNickname);
+        formDetailsJson.put("author", post.getAuthor());
         formDetailsJson.put("created", post.getCreated());
-        formDetailsJson.put("forum", forumSlug);
-        formDetailsJson.put("id", /*42 + */thread); //42, вроде косяк в тестах
+        formDetailsJson.put("forum", post.getForum());
+        formDetailsJson.put("id", post.getId());
         formDetailsJson.put("message", post.getMessage());
         formDetailsJson.put("isEdited", post.getIsEdited());
-        formDetailsJson.put("thread", thread);
+        formDetailsJson.put("thread", post.getThreadId());
         return formDetailsJson;
+    }
+
+    private String PostListResponse(List<Post> posts) {
+        final JSONArray jsonArray = new JSONArray();
+
+        for(Post p : posts) {
+            if (p == null) {
+                continue;
+            }
+            jsonArray.add(PostDataResponse(p, p.getCreated()));
+        }
+        return jsonArray.toString();
     }
 
 }

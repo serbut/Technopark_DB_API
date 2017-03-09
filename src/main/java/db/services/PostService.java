@@ -13,6 +13,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 
@@ -43,21 +45,21 @@ public final class PostService {
                 "forum_id INT REFERENCES forum(id) NOT NULL ," +
                 "isEdited BOOLEAN DEFAULT FALSE," +
                 "message TEXT," +
-                "parent_id INT REFERENCES post(id) DEFAULT 0," +
+                "parent_id INT REFERENCES post(id)," +
                 "thread_id INT REFERENCES thread(id) NOT NULL)";
         template.execute(createTable);
         LOGGER.info("Table post created!");
     }
 
-    public Post create(int userId, String created, int forumId, String message, boolean isEdited, int threadId) {
-        final Post post = new Post(userId, created, forumId, message, isEdited, threadId);
+    public Post create(Post post) {
         try {
             template.update(new PostCreatePst(post));
+            post.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('post', 'id'))", postIdMapper)); //возможно от этого можно избавиться
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating post - post already exists!");
             return null;
         }
-        LOGGER.info("Post with created");
+        LOGGER.info("Post with something created");
         return post;
     }
 
@@ -69,15 +71,21 @@ public final class PostService {
         }
 
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO post (user_id, created, forum_id, message, isEdited, thread_id) VALUES (?, ?, ?, ?, ?, ?)";
+            final String query = "INSERT INTO post (user_id, created, forum_id, message, isEdited, thread_id) VALUES (" +
+                    "(SELECT id FROM \"user\" WHERE nickname = ?), ?, " +
+                    "(SELECT f.id FROM forum f JOIN thread t ON (t.forum_id = f.id AND t.id = ?)), " +
+                    "?, ?, ?)";
             final PreparedStatement pst = con.prepareStatement(query);
-            pst.setInt(1, post.getUserId());
+            pst.setString(1, post.getAuthor());
             pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(post.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
-            pst.setInt(3, post.getForumId());
+            pst.setInt(3, post.getThreadId());
             pst.setString(4, post.getMessage());
             pst.setBoolean(5, post.getIsEdited());
             pst.setInt(6, post.getThreadId());
             return pst;
         }
     }
+
+    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("currval");
+
 }

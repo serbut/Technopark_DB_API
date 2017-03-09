@@ -6,31 +6,39 @@ package db.models;
  */
 public class Post {
     private long id;
-    private final int userId;
+    private final String author;
     private final String created;
-    private final int forumId;
+    private String forum;
     private final boolean isEdited;
     private final String message;
-    private final int parentId;
+    private int parentId = 0;
     private final int threadId;
 
-    public Post(int userId, String created, int forumId, String message, boolean isEdited, int threadId) {
-        this.userId = userId;
+    public Post(String author, String created, String forum, String message, boolean isEdited, int threadId) {
+        this.author = author;
         this.created = created;
-        this.forumId = forumId;
+        this.forum = forum;
         this.isEdited = isEdited;
         this.message = message;
         this.parentId = 0;
         this.threadId = threadId;
     }
 
-    public Post(int userId, String created, int forumId, String message, int parentId, int threadId) {
-        this.userId = userId;
+    public Post(String author, String created, String forum, String message, int parentId, int threadId) {
+        this.author = author;
         this.created = created;
-        this.forumId = forumId;
+        this.forum = forum;
         this.isEdited = false;
         this.message = message;
         this.parentId = parentId;
+        this.threadId = threadId;
+    }
+
+    public Post(String author, String created, String message, boolean isEdited, int threadId) {
+        this.author = author;
+        this.created = created;
+        this.isEdited = isEdited;
+        this.message = message;
         this.threadId = threadId;
     }
 
@@ -38,16 +46,16 @@ public class Post {
         return id;
     }
 
-    public int getUserId() {
-        return userId;
+    public String getAuthor() {
+        return author;
     }
 
     public String getCreated() {
         return created;
     }
 
-    public int getForumId() {
-        return  forumId;
+    public String getForum() {
+        return  forum;
     }
 
     public boolean getIsEdited() {
@@ -64,5 +72,13 @@ public class Post {
 
     public int getThreadId() {
         return threadId;
+    }
+
+    public void setForum(String forum) {
+        this.forum = forum;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 }

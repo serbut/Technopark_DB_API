@@ -5,27 +5,27 @@ package db.models;
  */
 public class Thread {
     private int id;
-    private final int userId;
+    private final String author;
     private final String created;
-    private final int forumId;
+    private final String forum;
     private final String message;
     private final String slug;
     private final String title;
 
-    public Thread(int userId, String created, int forumId, String message, String slug, String title) {
-        this.userId = userId;
+    public Thread(String author, String created, String forum, String message, String slug, String title) {
+        this.author = author;
         this.created = created;
-        this.forumId = forumId;
+        this.forum = forum;
         this.message = message;
         this.slug = slug;
         this.title = title;
     }
 
-    public Thread(int id, int userId, String created, int forumId, String message, String slug, String title) {
+    public Thread(int id, String author, String created, String forum, String message, String slug, String title) {
         this.id = id;
-        this.userId = userId;
+        this.author = author;
         this.created = created;
-        this.forumId = forumId;
+        this.forum = forum;
         this.message = message;
         this.slug = slug;
         this.title = title;
@@ -35,16 +35,16 @@ public class Thread {
         return id;
     }
 
-    public int getUserId() {
-        return userId;
+    public String getAuthor() {
+        return author;
     }
 
     public String getCreated() {
         return created;
     }
 
-    public int getForumId() {
-        return forumId;
+    public String getForum() {
+        return forum;
     }
 
     public String getMessage() {
@@ -57,5 +57,9 @@ public class Thread {
 
     public String getTitle() {
         return title;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

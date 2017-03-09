@@ -3,10 +3,8 @@ package db.controllers;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import db.models.Forum;
 import db.models.Thread;
-import db.models.User;
 import db.services.ForumService;
 import db.services.ThreadService;
-import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 
 /**
@@ -25,9 +25,6 @@ import java.util.List;
 class ThreadController {
     @Autowired
     private ThreadService threadService;
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private ForumService forumService;
@@ -48,21 +45,20 @@ class ThreadController {
         if (created == null) {
             created = "1970-01-01T00:00:00Z";
         }
-        final User user = userService.getUserByNickname(author);
-        final Forum forum = forumService.getForumBySlug(forumSlug);
-        final Thread thread = threadService.create(user.getId(), created, forum.getId(), message, slug, title);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, author, forumSlug, created));
+        final Thread thread = threadService.create(new Thread(author, created, forumSlug, message, slug, title));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread, created));
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-        final Forum forum = forumService.getForumBySlug(forumSlug);
-        if(forum == null) {
+        final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
+        if (forum == null) {
+            LOGGER.info("Error getting threads - forum with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        final List<Thread> threads = threadService.getThreads(forum.getId(), limit, sinceString, desc);
+        final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
         return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads));
     }
 
@@ -120,12 +116,12 @@ class ThreadController {
         }
     }
 
-    private static JSONObject ThreadDataResponse(Thread thread, String userNickname, String forumSlug, String created) { //убрать created
+    private static JSONObject ThreadDataResponse(Thread thread, String created) { //убрать created
         final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("author", userNickname);
+        formDetailsJson.put("author", thread.getAuthor());
         formDetailsJson.put("created", created);
-        formDetailsJson.put("forum", forumSlug);
-        formDetailsJson.put("id", 42); //42, вроде косяк в тестах
+        formDetailsJson.put("forum", thread.getForum());
+        formDetailsJson.put("id", thread.getId());
         formDetailsJson.put("message", thread.getMessage());
         formDetailsJson.put("slug", thread.getSlug());
         formDetailsJson.put("title", thread.getTitle());
@@ -139,9 +135,7 @@ class ThreadController {
             if (t == null) {
                 continue;
             }
-            final Forum f = forumService.getForumById(t.getForumId()); //тут все совсем плохо
-            final User u = userService.getUserById(t.getUserId());//тут все совсем плохо
-            jsonArray.add(ThreadDataResponse(t, u.getNickname(), f.getSlug(), t.getCreated()));
+            jsonArray.add(ThreadDataResponse(t, t.getCreated()));
         }
         return jsonArray.toString();
     }
