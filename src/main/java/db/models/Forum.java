@@ -1,13 +1,22 @@
 package db.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Created by sergey on 19.02.17.
  */
 public class Forum {
     private int id;
-    private final String slug;
-    private final String title;
-    private final String user;
+    @JsonProperty("slug")
+    private String slug;
+    @JsonProperty("title")
+    private String title;
+    @JsonProperty("user")
+    private String user;
+
+    @SuppressWarnings("unused")
+    private Forum() {
+    }
 
     public Forum(String slug, String title, String user) {
         this.slug = slug;

@@ -33,7 +33,7 @@ class ForumController {
     }
 
     @RequestMapping(path = "/api/forum/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity createForum(@RequestBody GetForumRequest body) {
+    public ResponseEntity createForum(@RequestBody Forum body) {
         final String slug = body.getSlug();
         final String title = body.getTitle();
         String userNickname = body.getUser();
@@ -41,17 +41,14 @@ class ForumController {
         try {
             userNickname = userService.getUserByNickname(userNickname).getNickname();//убрать это
             forum = forumService.create(new Forum(slug, title, userNickname));
-        }
-        catch (NullPointerException e) { //убрать это
+        } catch (NullPointerException e) { //убрать это
             LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
-        }
-        catch (DuplicateKeyException e) {
+        } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating forum - forum already exists!");
             forum = forumService.getForumBySlug(slug);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum));
-        }
-        catch (DataAccessException e) {
+        } catch (DataAccessException e) {
             LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
@@ -65,39 +62,6 @@ class ForumController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(ForumDataResponse(forum));
-    }
-
-
-    private static final class GetForumRequest {
-        @JsonProperty("slug")
-        private String slug;
-        @JsonProperty("title")
-        private String title;
-        @JsonProperty("user")
-        private String user;
-
-        @SuppressWarnings("unused")
-        private GetForumRequest() {
-        }
-
-        @SuppressWarnings("unused")
-        private GetForumRequest(String slug, String title, String user) {
-            this.slug = slug;
-            this.title = title;
-            this.user = user;
-        }
-
-        public String getSlug() {
-            return slug;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public String getUser() {
-            return user;
-        }
     }
 
     private static JSONObject ForumDataResponse(Forum forum) {

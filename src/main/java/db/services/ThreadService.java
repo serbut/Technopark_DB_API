@@ -1,6 +1,7 @@
 package db.services;
 
 import db.models.Thread;
+import db.models.Vote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -34,11 +35,13 @@ public final class ThreadService {
     public void clearTable() {
         final String dropTable = "DROP TABLE IF EXISTS thread CASCADE";
         template.execute(dropTable);
+        final String dropTableVotes = "DROP TABLE IF EXISTS vote CASCADE";
+        template.execute(dropTableVotes);
         LOGGER.info("Table thread was dropped");
     }
 
     public void createTable() {
-        final String createTable = "CREATE TABLE IF NOT EXISTS  thread (" +
+        final String createTableThreads = "CREATE TABLE IF NOT EXISTS  thread (" +
                 "id SERIAL NOT NULL PRIMARY KEY," +
                 "user_id INT REFERENCES \"user\"(id) NOT NULL," +
                 "created TIMESTAMP," +
@@ -46,18 +49,15 @@ public final class ThreadService {
                 "message TEXT," +
                 "slug VARCHAR(100)," +
                 "title VARCHAR(100) NOT NULL UNIQUE)";
-        template.execute(createTable);
+        template.execute(createTableThreads);
+        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_thread ON thread (LOWER(slug))";
+        template.execute(createUniqueSlug);
         LOGGER.info("Table thread created!");
     }
 
     public Thread create(Thread thread) {
-        try {
-            template.update(new ThreadCreatePst(thread));
-            thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", threadIdMapper)); //возможно от этого можно избавиться
-        } catch (DuplicateKeyException e) {
-            LOGGER.info("Error creating thread - thread already exists!");
-            return null;
-        }
+        template.update(new ThreadCreatePst(thread));
+        thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", threadIdMapper)); //возможно от этого можно избавиться
         LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
         return thread;
     }

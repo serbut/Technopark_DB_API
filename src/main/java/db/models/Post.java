@@ -1,45 +1,57 @@
 package db.models;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Created by sergey on 19.02.17.
  */
 public class Post {
     private long id;
-    private final String author;
-    private final String created;
+    @JsonProperty("author")
+    private String author;
+    @JsonProperty("created")
+    private String created;
+    @JsonProperty("forum")
     private String forum;
-    private final boolean isEdited;
-    private final String message;
+    @JsonProperty("isEdited")
+    private boolean isEdited;
+    @JsonProperty("message")
+    private String message;
+    @JsonProperty("thread")
+    private int thread;
     private int parentId = 0;
-    private final int threadId;
 
-    public Post(String author, String created, String forum, String message, boolean isEdited, int threadId) {
+    @SuppressWarnings("unused")
+    private Post() {
+    }
+
+    public Post(String author, String created, String forum, String message, boolean isEdited, int thread) {
         this.author = author;
         this.created = created;
         this.forum = forum;
         this.isEdited = isEdited;
         this.message = message;
         this.parentId = 0;
-        this.threadId = threadId;
+        this.thread = thread;
     }
 
-    public Post(String author, String created, String forum, String message, int parentId, int threadId) {
+    public Post(String author, String created, String forum, String message, int parentId, int thread) {
         this.author = author;
         this.created = created;
         this.forum = forum;
         this.isEdited = false;
         this.message = message;
         this.parentId = parentId;
-        this.threadId = threadId;
+        this.thread = thread;
     }
 
-    public Post(String author, String created, String message, boolean isEdited, int threadId) {
+    public Post(String author, String created, String message, boolean isEdited, int thread) {
         this.author = author;
         this.created = created;
         this.isEdited = isEdited;
         this.message = message;
-        this.threadId = threadId;
+        this.thread = thread;
     }
 
     public long getId() {
@@ -70,8 +82,8 @@ public class Post {
         return parentId;
     }
 
-    public int getThreadId() {
-        return threadId;
+    public int getThread() {
+        return thread;
     }
 
     public void setForum(String forum) {

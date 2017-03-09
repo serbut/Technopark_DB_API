@@ -78,10 +78,10 @@ public final class PostService {
             final PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, post.getAuthor());
             pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(post.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
-            pst.setInt(3, post.getThreadId());
+            pst.setInt(3, post.getThread());
             pst.setString(4, post.getMessage());
             pst.setBoolean(5, post.getIsEdited());
-            pst.setInt(6, post.getThreadId());
+            pst.setInt(6, post.getThread());
             return pst;
         }
     }

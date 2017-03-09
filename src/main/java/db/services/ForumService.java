@@ -29,7 +29,7 @@ public final class ForumService {
     public void clearTable() {
         final String dropTable = "DROP TABLE IF EXISTS forum CASCADE";
         template.execute(dropTable);
-        final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug";
+        final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug_forum";
         template.execute(dropUniqueSlug);
         LOGGER.info("Table forum dropped");
     }
@@ -41,7 +41,7 @@ public final class ForumService {
                 "title VARCHAR(100) NOT NULL UNIQUE," +
                 "user_id INT REFERENCES \"user\"(id) NOT NULL)";
         template.execute(createTable);
-        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug ON forum (LOWER(slug))";
+        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug))";
         template.execute(createUniqueSlug);
         LOGGER.info("Table forum created!");
     }

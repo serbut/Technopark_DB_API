@@ -40,17 +40,15 @@ class PostController {
     private PostService postService;
 
     @RequestMapping(path = "/api/thread/{thread}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createPost(@PathVariable(value="thread") String threadSlugOrId, @RequestBody List<GetPostRequest> body) {
-        int threadId = -1;
+    public ResponseEntity<Object> createPost(@PathVariable(value="thread") String threadSlugOrId, @RequestBody List<Post> body) {
         Thread t;
         try {
-            threadId = Integer.parseInt(threadSlugOrId);
-            t = threadService.getThreadById(threadId);
+            t = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
         } catch(NumberFormatException e) {
             t = threadService.getThreadBySlug(threadSlugOrId);
         }
         List<Post> posts = new ArrayList<>();
-        for(GetPostRequest postBody: body) {
+        for(Post postBody: body) {
             final String author = postBody.getAuthor();
             String created = postBody.getCreated();
             final String message = postBody.getMessage();
@@ -66,60 +64,7 @@ class PostController {
         return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts));
     }
 
-    private static final class GetPostRequest {
-        @JsonProperty("author")
-        private String author;
-        @JsonProperty("created")
-        private String created;
-        @JsonProperty("forum")
-        private String forum;
-        @JsonProperty("isEdited")
-        private boolean isEdited;
-        @JsonProperty("message")
-        private String message;
-        @JsonProperty("thread")
-        private int thread;
-
-        @SuppressWarnings("unused")
-        private GetPostRequest() {
-        }
-
-        @SuppressWarnings("unused")
-        private GetPostRequest(String author, String created, String forum, String message, int thread, boolean isEdited){
-            this.author = author;
-            this.created = created;
-            this.forum = forum;
-            this.message = message;
-            this.thread = thread;
-            this.isEdited = isEdited;
-        }
-
-        public String getAuthor() {
-            return author;
-        }
-
-        public String getCreated() {
-            return created;
-        }
-
-        public  String getForum() {
-            return forum;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public int getThread() {
-            return thread;
-        }
-
-        public boolean getIsEdited() {
-            return isEdited;
-        }
-    }
-
-    private static JSONObject PostDataResponse(Post post, String created) { //убрать created
+    private static JSONObject PostDataResponse(Post post) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", post.getAuthor());
         formDetailsJson.put("created", post.getCreated());
@@ -127,7 +72,7 @@ class PostController {
         formDetailsJson.put("id", post.getId());
         formDetailsJson.put("message", post.getMessage());
         formDetailsJson.put("isEdited", post.getIsEdited());
-        formDetailsJson.put("thread", post.getThreadId());
+        formDetailsJson.put("thread", post.getThread());
         return formDetailsJson;
     }
 
@@ -138,7 +83,7 @@ class PostController {
             if (p == null) {
                 continue;
             }
-            jsonArray.add(PostDataResponse(p, p.getCreated()));
+            jsonArray.add(PostDataResponse(p));
         }
         return jsonArray.toString();
     }

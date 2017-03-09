@@ -56,7 +56,8 @@ public final class UserService {
     public User create(String about, String email, String fullname, String nickname) {
         final User user = new User(about, email, fullname, nickname);
         try {
-            template.update(new UserPst(user));
+            final String query = "INSERT INTO \"user\" (about, nickname, fullname, email) VALUES (?, ?, ?, ?)";
+            template.update(query, about, nickname, fullname, email);
         }
         catch (DuplicateKeyException e) {
             LOGGER.info("Error creating user - user already exists!");
@@ -66,20 +67,18 @@ public final class UserService {
         return user;
     }
 
-    private static class UserPst implements PreparedStatementCreator {
-        private final User user;
-        UserPst(User user) {
-            this.user = user;
+    public User update(String about, String email, String fullname, String nickname) {
+        final String query = "UPDATE \"user\" SET " +
+                "about = COALESCE (?, about), " +
+                "email = COALESCE (?, email), " +
+                "fullname = COALESCE (?, fullname)" +
+                "WHERE LOWER (nickname) = LOWER (?)";
+        final int rows = template.update(query, about, email, fullname, nickname);
+        if (rows == 0) {
+            LOGGER.info("Error update user profile because user with such nickname does not exist!");
+            return null;
         }
-        public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO \"user\" (about, nickname, fullname, email) VALUES (?, ?, ?, ?)";
-            final PreparedStatement pst = con.prepareStatement(query);
-            pst.setString(1, user.getAbout());
-            pst.setString(2, user.getNickname());
-            pst.setString(3, user.getFullname());
-            pst.setString(4, user.getEmail());
-            return pst;
-        }
+        return getUserByNickname(nickname);
     }
 
     public User getUserByNickname(String nickname) {
@@ -107,20 +106,6 @@ public final class UserService {
         catch (EmptyResultDataAccessException e) {
             return null;
         }
-    }
-
-    public User updateUser(String about, String email, String fullname, String nickname) {
-        final String query = "UPDATE \"user\" SET " +
-                "about = COALESCE (?, about), " +
-                "email = COALESCE (?, email), " +
-                "fullname = COALESCE (?, fullname)" +
-                "WHERE LOWER (nickname) = LOWER (?)";
-        final int rows = template.update(query, about, email, fullname, nickname);
-        if (rows == 0) {
-            LOGGER.info("Error update user profile because user with such nickname does not exist!");
-            return null;
-        }
-        return getUserByNickname(nickname);
     }
 
     private final RowMapper<User> userMapper = (rs, rowNum) -> {

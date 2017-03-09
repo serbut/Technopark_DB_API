@@ -1,14 +1,24 @@
 package db.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Created by sergey on 19.02.17.
  */
 public class User {
     private int id;
-    private final String about;
-    private final String email;
-    private final String fullname;
-    private final String nickname; //добавить ограничения: Данное поле допускает только латиницу, цифры и знак подчеркивания. Сравнение имени регистронезависимо.
+    @JsonProperty("about")
+    private String about;
+    @JsonProperty("email")
+    private String email;
+    @JsonProperty("fullname")
+    private String fullname;
+    @JsonProperty("nickname")
+    private String nickname;
+
+    @SuppressWarnings("unused")
+    private User() {
+    }
 
     public User(String about, String email, String fullname, String nickname) {
         this.about = about;

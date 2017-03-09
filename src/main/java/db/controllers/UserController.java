@@ -35,7 +35,7 @@ class UserController {
     }
 
     @RequestMapping(path = "/api/user/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody GetUserRequest body) {
+    public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
         final String about = body.getAbout();
         final String email = body.getEmail();
         final String fullname = body.getFullname();
@@ -78,13 +78,13 @@ class UserController {
     }
 
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
-    public ResponseEntity updateUser(@PathVariable(value="nickname") String nickname, @RequestBody GetUserRequest body) {
+    public ResponseEntity updateUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
         final String about = body.getAbout();
         final String email = body.getEmail();
         final String fullname = body.getFullname();
         final User user;
         try {
-             user = userService.updateUser(about, email, fullname, nickname);
+             user = userService.update(about, email, fullname, nickname);
         }
         catch (DuplicateKeyException e) {
             LOGGER.info("Error updating user - duplicate values exists!");
@@ -95,45 +95,6 @@ class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(UserDataResponse(user));
-    }
-
-    private static final class GetUserRequest {
-        @JsonProperty("about")
-        private String about;
-        @JsonProperty("email")
-        private String email;
-        @JsonProperty("fullname")
-        private String fullname;
-        @JsonProperty("nickname")
-        private String nickname;
-
-        @SuppressWarnings("unused")
-        private GetUserRequest() {
-        }
-
-        @SuppressWarnings("unused")
-        private GetUserRequest(String about, String email, String fullname, String nickname) {
-            this.about = about;
-            this.email = email;
-            this.fullname = fullname;
-            this.nickname = nickname;
-        }
-
-        public String getAbout() {
-            return about;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public String getFullname() {
-            return fullname;
-        }
-
-        public String getNickname() {
-            return nickname;
-        }
     }
 
     private static JSONObject UserDataResponse(User user) {

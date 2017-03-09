@@ -1,9 +1,6 @@
 package db.controllers;
 
-import db.services.ForumService;
-import db.services.PostService;
-import db.services.ThreadService;
-import db.services.UserService;
+import db.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -26,8 +23,12 @@ class ServiceController {
     @Autowired
     private ForumService forumService;
 
+    @Autowired
+    private VoteService voteService;
+
     @RequestMapping(path = "/api/service/clear", method = RequestMethod.GET)
     public void deleteAllTables() {
+        voteService.clearTable();
         postService.clearTable();
         threadService.clearTable();
         userService.clearTable();
@@ -35,6 +36,7 @@ class ServiceController {
     }
     @RequestMapping(path = "/api/service/create", method = RequestMethod.GET)
     public void createAllTables() {
+        voteService.clearTable();
         postService.clearTable();
         threadService.clearTable();
         userService.clearTable();
@@ -43,5 +45,6 @@ class ServiceController {
         forumService.createTable();
         threadService.createTable();
         postService.createTable();
+        voteService.createTable();
     }
 }
