@@ -32,7 +32,7 @@ public class VoteController {
         String author = body.getAuthor();
         byte voice = body.getVoice();
         voteService.addVote(new Vote(author, t.getId(), voice));
-        t.setVotes(voteService.getVotesForThread(t.getId()));
+        t.setVotes(voteService.getVotesForThread(t.getId())); // от этого лучше бы избавиться
         return ResponseEntity.status(HttpStatus.OK).body(ThreadController.ThreadDataResponse(t));
     }
 }

@@ -39,10 +39,6 @@ class UserController {
         final String about = body.getAbout();
         final String email = body.getEmail();
         final String fullname = body.getFullname();
-        if (StringUtils.isEmpty(email)
-                || StringUtils.isEmpty(nickname)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Wrong parameters");
-        }
         User user = userService.create(about, email, fullname, nickname);
         if (user == null) {
             final List<User> duplicates = new ArrayList<>();

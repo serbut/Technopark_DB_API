@@ -45,7 +45,7 @@ public final class PostService {
                 "forum_id INT REFERENCES forum(id) NOT NULL ," +
                 "isEdited BOOLEAN DEFAULT FALSE," +
                 "message TEXT," +
-                "parent_id INT REFERENCES post(id)," +
+                "parent_id INT," +
                 "thread_id INT REFERENCES thread(id) NOT NULL)";
         template.execute(createTable);
         LOGGER.info("Table post created!");
@@ -71,17 +71,18 @@ public final class PostService {
         }
 
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO post (user_id, created, forum_id, message, isEdited, thread_id) VALUES (" +
+            final String query = "INSERT INTO post (user_id, created, forum_id, message, isEdited, parent_id, thread_id) VALUES (" +
                     "(SELECT id FROM \"user\" WHERE nickname = ?), ?, " +
                     "(SELECT f.id FROM forum f JOIN thread t ON (t.forum_id = f.id AND t.id = ?)), " +
-                    "?, ?, ?)";
+                    "?, ?, ?, ?)";
             final PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, post.getAuthor());
             pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(post.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
             pst.setInt(3, post.getThread());
             pst.setString(4, post.getMessage());
             pst.setBoolean(5, post.getIsEdited());
-            pst.setInt(6, post.getThread());
+            pst.setInt(6, post.getParentId());
+            pst.setInt(7, post.getThread());
             return pst;
         }
     }

@@ -20,27 +20,17 @@ public class Post {
     private String message;
     @JsonProperty("thread")
     private int thread;
+    @JsonProperty("parent")
     private int parentId = 0;
 
     @SuppressWarnings("unused")
     private Post() {
     }
 
-    public Post(String author, String created, String forum, String message, boolean isEdited, int thread) {
+    public Post(String author, String created, String message, boolean isEdited, int parentId, int thread) {
         this.author = author;
         this.created = created;
-        this.forum = forum;
         this.isEdited = isEdited;
-        this.message = message;
-        this.parentId = 0;
-        this.thread = thread;
-    }
-
-    public Post(String author, String created, String forum, String message, int parentId, int thread) {
-        this.author = author;
-        this.created = created;
-        this.forum = forum;
-        this.isEdited = false;
         this.message = message;
         this.parentId = parentId;
         this.thread = thread;

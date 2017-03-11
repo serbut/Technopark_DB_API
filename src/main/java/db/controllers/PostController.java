@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
+
 /**
  * Created by sergey on 05.03.17.
  */
@@ -39,8 +41,8 @@ class PostController {
     @Autowired
     private PostService postService;
 
-    @RequestMapping(path = "/api/thread/{thread}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createPost(@PathVariable(value="thread") String threadSlugOrId, @RequestBody List<Post> body) {
+    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> createPost(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
         Thread t;
         try {
             t = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
@@ -53,15 +55,26 @@ class PostController {
             String created = postBody.getCreated();
             final String message = postBody.getMessage();
             final boolean isEdited = postBody.getIsEdited();
+            final int parentId = postBody.getParentId();
             if (created == null) {
                 LocalDateTime a = LocalDateTime.now();
                 created = a.toString() + "+03:00"; // получить актуальное время
             }
-            final Post post = postService.create(new Post(author, created, message, isEdited, t.getId()));
+            final Post post = postService.create(new Post(author, created, message, isEdited, parentId, t.getId()));
             post.setForum(t.getForum());
             posts.add(post);
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts));
+    }
+
+    @RequestMapping(path = "/api/forum/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getPosts(@PathVariable(value="thread_slug_or_id") String forumSlug,
+                                   @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
+                                   @RequestParam(name = "marker", required = false) String marker,  //маркер может быть получен из какого-либо предыдущего запроса
+                                   @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
+                                   @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
+
+
     }
 
     private static JSONObject PostDataResponse(Post post) {
@@ -71,6 +84,7 @@ class PostController {
         formDetailsJson.put("forum", post.getForum());
         formDetailsJson.put("id", post.getId());
         formDetailsJson.put("message", post.getMessage());
+        formDetailsJson.put("parent", post.getParentId());
         formDetailsJson.put("isEdited", post.getIsEdited());
         formDetailsJson.put("thread", post.getThread());
         return formDetailsJson;

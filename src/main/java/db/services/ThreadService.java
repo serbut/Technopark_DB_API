@@ -64,10 +64,12 @@ public final class ThreadService {
 
     public Thread getThreadBySlug(String slug) {
         try {
-            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                     "JOIN forum f ON (t.forum_id=f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
-                    "WHERE LOWER (t.slug) = ?", threadMapper, slug.toLowerCase());
+                    "LEFT JOIN vote v ON (v.thread_id = t.id)" +
+                    "WHERE LOWER (t.slug) = ?" +
+                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", threadMapper, slug.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -76,10 +78,12 @@ public final class ThreadService {
 
     public Thread getThreadById(int id) {
         try {
-            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                     "JOIN forum f ON (t.forum_id = f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
-                    "WHERE (t.id) = ?", threadMapper, id);
+                    "LEFT JOIN vote v ON (v.thread_id = t.id)" +
+                    "WHERE (t.id) = ?" +
+                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", threadMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -104,9 +108,12 @@ public final class ThreadService {
             final Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
             params.add(since);
         }
-        final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title FROM thread t " +
+        final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND f.slug = ?)" +
-                "JOIN \"user\" u ON (u.id = t.user_id)" + sinceCreated + " ORDER BY created " + sort + " LIMIT ?";
+                "LEFT JOIN vote v ON (v.thread_id = t.id)" +
+                "JOIN \"user\" u ON (u.id = t.user_id)" + sinceCreated +
+                "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title" +
+                " ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);
         return template.query(query, threadMapper, params.toArray());
     }
@@ -145,6 +152,7 @@ public final class ThreadService {
         final String message = rs.getString("message");
         final String slug = rs.getString("slug");
         final String title = rs.getString("title");
-        return new Thread(id, author, dateFormat.format(created), forum, message, slug, title);
+        final int votes = rs.getInt("votes");
+        return new Thread(id, author, dateFormat.format(created), forum, message, slug, title, votes);
     };
 }

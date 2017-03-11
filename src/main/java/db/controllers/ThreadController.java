@@ -77,8 +77,8 @@ class ThreadController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread));
     }
 
-    @RequestMapping(path = "/api/thread/{thread}/details", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getSingleThread(@PathVariable(value="thread") String threadSlugOrId) {
+    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getSingleThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId) {
         Thread t;
         try {
             t = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
@@ -93,7 +93,8 @@ class ThreadController {
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug, @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
+    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug,
+                                     @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
