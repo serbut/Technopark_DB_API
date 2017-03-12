@@ -58,7 +58,7 @@ class PostController {
             final int parentId = postBody.getParentId();
             if (created == null) {
                 LocalDateTime a = LocalDateTime.now();
-                created = a.toString() + "+03:00"; // получить актуальное время
+                created = a.toString() + "+03:00";
             }
             final Post post = postService.create(new Post(author, created, message, isEdited, parentId, thread.getId()));
             post.setForum(thread.getForum());
@@ -84,9 +84,27 @@ class PostController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         int markerInt = Integer.parseInt(marker);
-        final List<Post> posts = postService.getPosts(thread.getSlug(), limit, markerInt, sort, desc);
-        if(!posts.isEmpty()){
-            markerInt += posts.size();
+        List<Post> posts = null;
+        switch (sort) {
+            case "flat":
+                posts = postService.getPostsFlat(thread.getSlug(), limit, markerInt, desc);
+                if(!posts.isEmpty()){
+                    markerInt += posts.size();
+                }
+                break;
+            case "tree":
+                posts = postService.getPostsTree(thread.getSlug(), limit, markerInt, desc);
+                if(!posts.isEmpty()){
+                    markerInt += posts.size();
+                }
+                break;
+            case "parent_tree":
+                List<Integer> parentIds = postService.getParents(thread.getSlug(), limit, markerInt, desc);
+                if(!parentIds.isEmpty()){
+                    markerInt += parentIds.size();
+                }
+                posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
+                break;
         }
         return ResponseEntity.ok(SortResponse(PostListResponse(posts), String.valueOf(markerInt)));
     }

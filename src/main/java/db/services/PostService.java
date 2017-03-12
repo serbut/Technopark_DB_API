@@ -59,7 +59,7 @@ public final class PostService {
     public Post create(Post post) {
         try {
             template.update(new PostCreatePst(post));
-            post.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('post', 'id'))", postIdMapper)); //возможно от этого можно избавиться
+            post.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('post', 'id'))", postCurrentIdMapper)); //возможно от этого можно избавиться
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating post - post already exists!");
             return null;
@@ -68,19 +68,34 @@ public final class PostService {
         return post;
     }
 
-    public List<Post> getPosts(String threadSlug, int limit, int offset, String sort, boolean desc) {
-        final ArrayList<Object> params = new ArrayList<>();
+    public List<Post> getPostsFlat(String threadSlug, int limit, int offset, boolean desc) {
+        String query = "SELECT p.id, nickname, p.created, f.slug, isEdited, p.message, parent_id, thread_id FROM post p " +
+                "JOIN thread t ON (p.thread_id = t.id AND t.slug = ?)" +
+                "JOIN forum f ON (t.forum_id = f.id)" +
+                "JOIN \"user\" u ON (u.id = p.user_id)" +
+                "ORDER BY created " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+        return template.query(query, postMapper, threadSlug, limit, offset);
+    }
+
+    public List<Post> getPostsTree(String threadSlug, int limit, int offset, boolean desc) {
+        String query = "WITH RECURSIVE tree (id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, posts) AS ( " +
+                "SELECT id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, array[id] FROM post WHERE parent_id = 0 " +
+                "UNION ALL " +
+                "SELECT p.id, p.user_id, p.created, p.forum_id, p.isEdited, p.message, p.parent_id, p.thread_id, array_append(posts, p.id) FROM post p " +
+                "JOIN tree ON tree.id = p.parent_id) " +
+                "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, array_to_string(posts, ' ') AS posts FROM tree tr " +
+                "JOIN thread t ON (tr.thread_id = t.id AND t.slug = ?) " +
+                "JOIN forum f ON (t.forum_id = f.id) " +
+                "JOIN \"user\" u ON (u.id = tr.user_id) " +
+                "ORDER BY posts " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+        return template.query(query, postMapper, threadSlug, limit, offset);
+    }
+    public List<Post> getPostsParentsTree(String threadSlug, boolean desc, List<Integer> parentIds) {
         String query = null;
-        params.add(threadSlug);
-        if(sort.equals("flat")) {
-            query = "SELECT p.id, nickname, p.created, f.slug, isEdited, p.message, parent_id, thread_id FROM post p " +
-                    "JOIN thread t ON (p.thread_id = t.id AND t.slug = ?)" +
-                    "JOIN forum f ON (t.forum_id = f.id)" +
-                    "JOIN \"user\" u ON (u.id = p.user_id)" +
-                    "ORDER BY created " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
-        } else if (sort.equals("tree")) {
+        List<Post> result = new ArrayList<>();
+        for (Integer id : parentIds) {
             query = "WITH RECURSIVE tree (id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, posts) AS ( " +
-                    "SELECT id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, array[id] FROM post WHERE parent_id = 0 " +
+                    "SELECT id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, array[id] FROM post WHERE id = ? " +
                     "UNION ALL " +
                     "SELECT p.id, p.user_id, p.created, p.forum_id, p.isEdited, p.message, p.parent_id, p.thread_id, array_append(posts, p.id) FROM post p " +
                     "JOIN tree ON tree.id = p.parent_id) " +
@@ -88,11 +103,18 @@ public final class PostService {
                     "JOIN thread t ON (tr.thread_id = t.id AND t.slug = ?) " +
                     "JOIN forum f ON (t.forum_id = f.id) " +
                     "JOIN \"user\" u ON (u.id = tr.user_id) " +
-                    "ORDER BY posts " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+                    "ORDER BY posts " + (desc ? "DESC" : "ASC");
+            result.addAll(template.query(query, postMapper, id, threadSlug));
         }
-        params.add(limit);
-        params.add(offset);
-        return template.query(query, postMapper, params.toArray());
+        return result;
+    }
+
+    public List<Integer> getParents(String threadSlug, int limit, int offset, boolean desc) {
+        String parentsQuery = "SELECT p.id FROM post p " +
+                "JOIN thread t ON (t.id = p.thread_id) " +
+                "WHERE parent_id = 0 AND t.slug = ? " +
+                "ORDER BY p.id " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+        return template.query(parentsQuery, postIdMapper, threadSlug, limit, offset);
     }
 
     private static class PostCreatePst implements PreparedStatementCreator {
@@ -119,7 +141,9 @@ public final class PostService {
         }
     }
 
-    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("currval");
+    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("id");
+
+    private final RowMapper<Integer> postCurrentIdMapper = (rs, rowNum) -> rs.getInt("currval");
 
     private final RowMapper<Post> postMapper = (rs, rowNum) -> {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
