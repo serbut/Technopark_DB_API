@@ -79,17 +79,45 @@ class ThreadController {
 
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getSingleThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId) {
-        Thread t;
+        Thread thread;
         try {
-            t = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
         } catch(NumberFormatException e) {
-            t = threadService.getThreadBySlug(threadSlugOrId);
+            thread = threadService.getThreadBySlug(threadSlugOrId);
         }
-        if (t == null) {
+        if (thread == null) {
             LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadDataResponse(t));
+        return ResponseEntity.status(HttpStatus.OK).body(ThreadDataResponse(thread));
+    }
+
+    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
+    public ResponseEntity updateThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
+        Thread thread;
+        try {
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+        } catch(NumberFormatException e) {
+            thread = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        if (thread == null) {
+            LOGGER.info("Thread with such slug not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        final String message = body.getMessage();
+        final String title = body.getTitle();
+        try {
+            thread = threadService.update(thread.getSlug(), message, title);
+        }
+        catch (DuplicateKeyException e) {
+            LOGGER.info("Error updating thread - duplicate values exists!");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("");
+        }
+        if (thread == null) {
+            LOGGER.info("Error updating thread - thread doesn't exists!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(ThreadDataResponse(thread));
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")

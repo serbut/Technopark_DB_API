@@ -62,6 +62,19 @@ public final class ThreadService {
         return thread;
     }
 
+    public Thread update(String slug, String message, String title) {
+        final String query = "UPDATE thread SET " +
+                "message = COALESCE (?, message), " +
+                "title = COALESCE (?, title)" +
+                "WHERE LOWER (slug) = LOWER (?)";
+        final int rows = template.update(query, message, title, slug);
+        if (rows == 0) {
+            LOGGER.info("Error update thread profile because thread with such slug does not exist!");
+            return null;
+        }
+        return getThreadBySlug(slug);
+    }
+
     public Thread getThreadBySlug(String slug) {
         try {
             return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
