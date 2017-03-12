@@ -70,12 +70,26 @@ public final class PostService {
 
     public List<Post> getPosts(String threadSlug, int limit, int offset, String sort, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
+        String query = null;
         params.add(threadSlug);
-        final String query = "SELECT p.id, nickname, p.created, f.slug, isEdited, p.message, parent_id, thread_id FROM post p " +
-                "JOIN thread t ON (p.thread_id = t.id AND t.slug = ?)" +
-                "JOIN forum f ON (t.forum_id = f.id)" +
-                "JOIN \"user\" u ON (u.id = p.user_id)" +
-                " ORDER BY created " + (desc ? "DESC" : "ASC" ) + " LIMIT ? OFFSET ?";
+        if(sort.equals("flat")) {
+            query = "SELECT p.id, nickname, p.created, f.slug, isEdited, p.message, parent_id, thread_id FROM post p " +
+                    "JOIN thread t ON (p.thread_id = t.id AND t.slug = ?)" +
+                    "JOIN forum f ON (t.forum_id = f.id)" +
+                    "JOIN \"user\" u ON (u.id = p.user_id)" +
+                    "ORDER BY created " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+        } else if (sort.equals("tree")) {
+            query = "WITH RECURSIVE tree (id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, posts) AS ( " +
+                    "SELECT id, user_id, created, forum_id, isEdited, message, parent_id, thread_id, array[id] FROM post WHERE parent_id = 0 " +
+                    "UNION ALL " +
+                    "SELECT p.id, p.user_id, p.created, p.forum_id, p.isEdited, p.message, p.parent_id, p.thread_id, array_append(posts, p.id) FROM post p " +
+                    "JOIN tree ON tree.id = p.parent_id) " +
+                    "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, array_to_string(posts, ' ') AS posts FROM tree tr " +
+                    "JOIN thread t ON (tr.thread_id = t.id AND t.slug = ?) " +
+                    "JOIN forum f ON (t.forum_id = f.id) " +
+                    "JOIN \"user\" u ON (u.id = tr.user_id) " +
+                    "ORDER BY posts " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+        }
         params.add(limit);
         params.add(offset);
         return template.query(query, postMapper, params.toArray());
