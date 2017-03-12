@@ -94,7 +94,7 @@ class ThreadController {
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug,
-                                     @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
+                                     @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
@@ -103,7 +103,7 @@ class ThreadController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads));
+        return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads).toJSONString());
     }
 
     static JSONObject ThreadDataResponse(Thread thread) {
@@ -119,7 +119,7 @@ class ThreadController {
         return formDetailsJson;
     }
 
-    private String ThreadListResponse(List<Thread> threads) {
+    private JSONArray ThreadListResponse(List<Thread> threads) {
         final JSONArray jsonArray = new JSONArray();
 
         for(Thread t : threads) {
@@ -128,6 +128,6 @@ class ThreadController {
             }
             jsonArray.add(ThreadDataResponse(t));
         }
-        return jsonArray.toString();
+        return jsonArray;
     }
 }

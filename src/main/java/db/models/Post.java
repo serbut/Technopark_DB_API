@@ -19,7 +19,7 @@ public class Post {
     @JsonProperty("message")
     private String message;
     @JsonProperty("thread")
-    private int thread;
+    private int threadId;
     @JsonProperty("parent")
     private int parentId = 0;
 
@@ -27,21 +27,32 @@ public class Post {
     private Post() {
     }
 
-    public Post(String author, String created, String message, boolean isEdited, int parentId, int thread) {
+    public Post(String author, String created, String message, boolean isEdited, int parentId, int threadId) {
         this.author = author;
         this.created = created;
         this.isEdited = isEdited;
         this.message = message;
         this.parentId = parentId;
-        this.thread = thread;
+        this.threadId = threadId;
     }
 
-    public Post(String author, String created, String message, boolean isEdited, int thread) {
+    public Post(String author, String created, String message, boolean isEdited, int threadId) {
         this.author = author;
         this.created = created;
         this.isEdited = isEdited;
         this.message = message;
-        this.thread = thread;
+        this.threadId = threadId;
+    }
+
+    public Post(int id, String author, String created, String forum, String message, boolean isEdited, int parentId, int threadId) {
+        this.id = id;
+        this.author = author;
+        this.created = created;
+        this.isEdited = isEdited;
+        this.forum = forum;
+        this.message = message;
+        this.parentId = parentId;
+        this.threadId = threadId;
     }
 
     public long getId() {
@@ -72,8 +83,8 @@ public class Post {
         return parentId;
     }
 
-    public int getThread() {
-        return thread;
+    public int getThreadId() {
+        return threadId;
     }
 
     public void setForum(String forum) {

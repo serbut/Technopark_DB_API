@@ -90,7 +90,7 @@ public final class ThreadService {
         }
     }
 
-    public List<Thread> getThreads(String forumSlug, double limit, String sinceString, boolean desc) {
+    public List<Thread> getThreads(String forumSlug, int limit, String sinceString, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
         params.add(forumSlug);
         final String sort;

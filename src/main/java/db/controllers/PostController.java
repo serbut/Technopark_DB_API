@@ -43,11 +43,11 @@ class PostController {
 
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPost(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
-        Thread t;
+        Thread thread;
         try {
-            t = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
         } catch(NumberFormatException e) {
-            t = threadService.getThreadBySlug(threadSlugOrId);
+            thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         List<Post> posts = new ArrayList<>();
         for(Post postBody: body) {
@@ -60,21 +60,35 @@ class PostController {
                 LocalDateTime a = LocalDateTime.now();
                 created = a.toString() + "+03:00"; // получить актуальное время
             }
-            final Post post = postService.create(new Post(author, created, message, isEdited, parentId, t.getId()));
-            post.setForum(t.getForum());
+            final Post post = postService.create(new Post(author, created, message, isEdited, parentId, thread.getId()));
+            post.setForum(thread.getForum());
             posts.add(post);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts));
+        return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts).toJSONString());
     }
 
-    @RequestMapping(path = "/api/forum/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getPosts(@PathVariable(value="thread_slug_or_id") String forumSlug,
-                                   @RequestParam(name = "limit", required = false, defaultValue = "0") double limit,
-                                   @RequestParam(name = "marker", required = false) String marker,  //маркер может быть получен из какого-либо предыдущего запроса
+    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getPosts(@PathVariable(value="thread_slug_or_id") String threadSlugOrId,
+                                   @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
+                                   @RequestParam(name = "marker", required = false, defaultValue = "0") String marker,
                                    @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
                                    @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-
-
+        Thread thread;
+        try {
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+        } catch(NumberFormatException e) {
+            thread = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        if (thread == null) {
+            LOGGER.info("Error getting posts - thread with such slug/id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        int markerInt = Integer.parseInt(marker);
+        final List<Post> posts = postService.getPosts(thread.getSlug(), limit, markerInt, sort, desc);
+        if(!posts.isEmpty()){
+            markerInt += posts.size();
+        }
+        return ResponseEntity.ok(SortResponse(PostListResponse(posts), String.valueOf(markerInt)));
     }
 
     private static JSONObject PostDataResponse(Post post) {
@@ -86,20 +100,26 @@ class PostController {
         formDetailsJson.put("message", post.getMessage());
         formDetailsJson.put("parent", post.getParentId());
         formDetailsJson.put("isEdited", post.getIsEdited());
-        formDetailsJson.put("thread", post.getThread());
+        formDetailsJson.put("thread", post.getThreadId());
         return formDetailsJson;
     }
 
-    private String PostListResponse(List<Post> posts) {
-        final JSONArray jsonArray = new JSONArray();
+    private static JSONObject SortResponse(JSONArray result, String marker) {
+        final JSONObject formDetailsJson = new JSONObject();
+        formDetailsJson.put("marker", marker);
+        formDetailsJson.put("posts", result);
+        return formDetailsJson;
+    }
 
+    private JSONArray PostListResponse(List<Post> posts) {
+        final JSONArray jsonArray = new JSONArray();
         for(Post p : posts) {
             if (p == null) {
                 continue;
             }
             jsonArray.add(PostDataResponse(p));
         }
-        return jsonArray.toString();
+        return jsonArray;
     }
 
 }
