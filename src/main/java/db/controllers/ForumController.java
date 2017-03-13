@@ -56,12 +56,24 @@ class ForumController {
     }
 
     @RequestMapping(path = "/api/forum/{slug}/details", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getUser(@PathVariable(value="slug") String slug) {
+    public ResponseEntity getForum(@PathVariable(value="slug") String slug) {
         final Forum forum = forumService.getForumBySlug(slug);
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(ForumDataResponse(forum));
+    }
+
+    @RequestMapping(path = "/api/forum/{slug}/users", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getUserList(@PathVariable(value="slug") String slug,
+                                      @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
+                                      @RequestParam(name = "since", required = false) String since,
+                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
+        final Forum forum = forumService.getForumBySlug(slug);
+        if (forum == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(UserController.UserListResponse(userService.getUsersForum(slug, limit, since, desc)));
     }
 
     private static JSONObject ForumDataResponse(Forum forum) {

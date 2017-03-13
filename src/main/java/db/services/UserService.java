@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -106,6 +107,33 @@ public final class UserService {
         catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    public List<User> getUsersForum (String forumSlug, int limit, String since, boolean desc) {
+        final ArrayList<Object> params = new ArrayList<>();
+        params.add(forumSlug);
+        final String sort;
+        final String createdSign;
+        String sinceCreated = ""; //переписать на StringBuilder
+        if (desc) {
+            sort = "DESC";
+            createdSign = "<";
+        } else {
+            sort = "ASC";
+            createdSign = ">";
+        }
+        if (since != null) {
+            sinceCreated = "WHERE LOWER (nickname COLLATE \"ucs_basic\") " + createdSign + " LOWER (? COLLATE \"ucs_basic\") ";
+            params.add(since);
+        }
+        final String query = "SELECT DISTINCT u.id, about, nickname COLLATE \"ucs_basic\", fullname, email, LOWER (nickname COLLATE \"ucs_basic\") AS trash FROM \"user\" u " +
+                "LEFT JOIN thread t ON (u.id = t.user_id) " +
+                "LEFT JOIN post p ON (u.id = p.user_id) " +
+                "JOIN forum f ON (LOWER (f.slug) = LOWER (?) AND (f.id = t.forum_id OR f.id = p.forum_id)) " +
+                sinceCreated +
+                " ORDER BY LOWER (nickname COLLATE \"ucs_basic\") " + sort + " LIMIT ?";
+        params.add(limit);
+        return template.query(query, userMapper, params.toArray());
     }
 
     private final RowMapper<User> userMapper = (rs, rowNum) -> {

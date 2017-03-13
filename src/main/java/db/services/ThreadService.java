@@ -48,7 +48,7 @@ public final class ThreadService {
                 "forum_id INT REFERENCES forum(id) NOT NULL," +
                 "message TEXT," +
                 "slug VARCHAR(100)," +
-                "title VARCHAR(100) NOT NULL UNIQUE)";
+                "title VARCHAR(100) NOT NULL)";
         template.execute(createTableThreads);
         final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_thread ON thread (LOWER(slug))";
         template.execute(createUniqueSlug);
@@ -117,16 +117,16 @@ public final class ThreadService {
             createdSign = ">=";
         }
         if (sinceString != null) {
-            sinceCreated = "WHERE created " + createdSign + " ?";
+            sinceCreated = "WHERE created " + createdSign + " ? ";
             final Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
             params.add(since);
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND f.slug = ?)" +
-                "LEFT JOIN vote v ON (v.thread_id = t.id)" +
-                "JOIN \"user\" u ON (u.id = t.user_id)" + sinceCreated +
-                "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title" +
-                " ORDER BY created " + sort + " LIMIT ?";
+                "LEFT JOIN vote v ON (v.thread_id = t.id) " +
+                "JOIN \"user\" u ON (u.id = t.user_id) " + sinceCreated +
+                "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title " +
+                "ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);
         return template.query(query, threadMapper, params.toArray());
     }

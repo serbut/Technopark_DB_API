@@ -1,6 +1,7 @@
 package db.services;
 
 import db.models.Forum;
+import db.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by sergey on 26.02.17.
@@ -38,7 +41,7 @@ public final class ForumService {
         final String createTable = "CREATE TABLE IF NOT EXISTS  forum (" +
                 "id SERIAL NOT NULL PRIMARY KEY," +
                 "slug VARCHAR(100)," +
-                "title VARCHAR(100) NOT NULL UNIQUE," +
+                "title VARCHAR(100) NOT NULL ," +
                 "user_id INT REFERENCES \"user\"(id) NOT NULL)";
         template.execute(createTable);
         final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug))";

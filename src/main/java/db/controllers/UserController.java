@@ -102,7 +102,7 @@ class UserController {
         return formDetailsJson;
     }
 
-    private static String UserListResponse(List<User> users) {
+    static String UserListResponse(List<User> users) {
         final JSONArray jsonArray = new JSONArray();
 
         for(User u : users) {
