@@ -127,7 +127,8 @@ public final class UserService {
             params.add(since);
         }
         final String query = "SELECT DISTINCT u.id, about, nickname COLLATE \"ucs_basic\", fullname, email, LOWER (nickname COLLATE \"ucs_basic\") AS trash FROM \"user\" u " +
-                "LEFT JOIN thread t ON (u.id = t.user_id) " +
+                "LEFT JOIN vote v ON (u.id = v.user_id) " +
+                "LEFT JOIN thread t ON (u.id = t.user_id OR t.id = v.thread_id) " +
                 "LEFT JOIN post p ON (u.id = p.user_id) " +
                 "JOIN forum f ON (LOWER (f.slug) = LOWER (?) AND (f.id = t.forum_id OR f.id = p.forum_id)) " +
                 sinceCreated +

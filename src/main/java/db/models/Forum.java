@@ -13,6 +13,8 @@ public class Forum {
     private String title;
     @JsonProperty("user")
     private String user;
+    private int posts;
+    private int threads;
 
     @SuppressWarnings("unused")
     private Forum() {
@@ -24,11 +26,13 @@ public class Forum {
         this.user = user;
     }
 
-    public Forum(int id, String slug, String title, String user) {
+    public Forum(int id, String slug, String title, String user, int posts, int threads) {
         this.id = id;
         this.slug = slug;
         this.title = title;
         this.user = user;
+        this.posts = posts;
+        this.threads = threads;
     }
 
     public int getId() {
@@ -45,5 +49,13 @@ public class Forum {
 
     public String getUser() {
         return user;
+    }
+
+    public int getPosts() {
+        return posts;
+    }
+
+    public int getThreads() {
+        return threads;
     }
 }

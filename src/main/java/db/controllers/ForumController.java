@@ -81,6 +81,8 @@ class ForumController {
         formDetailsJson.put("slug", forum.getSlug());
         formDetailsJson.put("title", forum.getTitle());
         formDetailsJson.put("user", forum.getUser());
+        formDetailsJson.put("posts", forum.getPosts());
+        formDetailsJson.put("threads", forum.getThreads());
         return formDetailsJson;
     }
 }

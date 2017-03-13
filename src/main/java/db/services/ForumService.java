@@ -73,18 +73,23 @@ public final class ForumService {
 
     public Forum getForumBySlug(String slug) {
         try {
-            return template.queryForObject("SELECT f.id, slug, title, nickname FROM forum f " +
-                    "JOIN \"user\" u ON (u.id = f.user_id) WHERE LOWER (slug) = ?", forumMapper, slug.toLowerCase());
-        }
-        catch (EmptyResultDataAccessException e) {
-            return null;
-        }
-    }
+            return template.queryForObject("WITH forum AS (SELECT f.id as id, f.slug as slug, f.title as title, nickname, p.id as pid, t.id as tid FROM forum f " + //переписать эту дичь
+                            "JOIN \"user\" u ON (u.id = f.user_id) LEFT JOIN post p ON (p.forum_id = f.id) " +                                                          //но работает!
+                            "LEFT JOIN thread t ON (t.forum_id = f.id) WHERE LOWER (f.slug) = LOWER (?))" +
+                            "SELECT DISTINCT f.id, f.slug, f.title, f.nickname, p.count AS posts, t.count AS threads from forum f " +
+                            "CROSS JOIN (SELECT COUNT (pid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.tid) AS p " +
+                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t "
 
-    public Forum getForumById(int id) {
-        try {
-            return template.queryForObject("SELECT f.id, slug, title, nickname FROM forum f " +
-                    "JOIN \"user\" u ON (u.id = f.user_id) WHERE id = ?", forumMapper, id);
+                    /*"SELECT f.id, f.slug, f.title, nickname FROM (SELECT f.id, f.slug, f.title, nickname, p.id, t.id FROM forum f " +
+                    "JOIN \"user\" u ON (u.id = f.user_id) " +
+                    "LEFT JOIN post p ON (p.forum_id = f.id) " +
+                    "LEFT JOIN thread t ON (t.forum_id = f.id) " +
+                    "WHERE LOWER (f.slug) = LOWER (?) " +
+                    "GROUP BY f.id, f.slug, f.title, nickname) AS forum " +
+                    "UNION " +
+                    "SELECT COUNT(p.id) AS posts FROM forum " +
+                    "UNION " +
+                    "SELECT COUNT (t.id) AS threads FROM forum"*/, forumMapper, slug);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -96,6 +101,8 @@ public final class ForumService {
         final String slug = rs.getString("slug");
         final String title = rs.getString("title");
         final String userNickname = rs.getString("nickname");
-        return new Forum(id, slug, title, userNickname);
+        final int posts = rs.getInt("posts");
+        final int threads = rs.getInt("threads");
+        return new Forum(id, slug, title, userNickname, posts, threads);
     };
 }
