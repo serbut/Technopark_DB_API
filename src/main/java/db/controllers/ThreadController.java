@@ -68,13 +68,13 @@ class ThreadController {
             catch (NullPointerException ex) {
                 LOGGER.info("There is no thread with such slug");
             }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ThreadDataResponse(thread));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(threadDataResponse(thread));
         }
         catch (DataAccessException e) {
             LOGGER.info("Error creating thread - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadDataResponse(thread));
+        return ResponseEntity.status(HttpStatus.CREATED).body(threadDataResponse(thread));
     }
 
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
@@ -89,7 +89,7 @@ class ThreadController {
             LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadDataResponse(thread));
+        return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
     }
 
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
@@ -117,7 +117,7 @@ class ThreadController {
             LOGGER.info("Error updating thread - thread doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadDataResponse(thread));
+        return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
     }
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
@@ -131,10 +131,10 @@ class ThreadController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadListResponse(threads).toJSONString());
+        return ResponseEntity.status(HttpStatus.OK).body(threadListResponse(threads).toJSONString());
     }
 
-    static JSONObject ThreadDataResponse(Thread thread) {
+    static JSONObject threadDataResponse(Thread thread) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", thread.getAuthor());
         formDetailsJson.put("created", thread.getCreated());
@@ -147,14 +147,14 @@ class ThreadController {
         return formDetailsJson;
     }
 
-    private JSONArray ThreadListResponse(List<Thread> threads) {
+    private JSONArray threadListResponse(List<Thread> threads) {
         final JSONArray jsonArray = new JSONArray();
 
         for(Thread t : threads) {
             if (t == null) {
                 continue;
             }
-            jsonArray.add(ThreadDataResponse(t));
+            jsonArray.add(threadDataResponse(t));
         }
         return jsonArray;
     }

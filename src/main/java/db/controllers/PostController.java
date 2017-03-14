@@ -64,7 +64,7 @@ class PostController {
             post.setForum(thread.getForum());
             posts.add(post);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(PostListResponse(posts).toJSONString());
+        return ResponseEntity.status(HttpStatus.CREATED).body(postListResponse(posts).toJSONString());
     }
 
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
@@ -106,10 +106,35 @@ class PostController {
                 posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
                 break;
         }
-        return ResponseEntity.ok(SortResponse(PostListResponse(posts), String.valueOf(markerInt)));
+        return ResponseEntity.ok(sortResponse(postListResponse(posts), String.valueOf(markerInt)));
     }
 
-    private static JSONObject PostDataResponse(Post post) {
+    @RequestMapping(path = "/api/post/{id}/details", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getPostDetails(@PathVariable(value="id") int postId,
+                                         @RequestParam(name = "related", required = false) ArrayList<String> related) {
+        JSONObject author = null;
+        JSONObject forum = null;
+        JSONObject thread = null;
+        final Post post = postService.getPostById(postId);
+        if (post == null) {
+            LOGGER.info("Post with such id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        if (related != null) {
+            if (related.contains("user")) {
+                author = UserController.userDataResponse(userService.getUserByNickname(post.getAuthor()));
+            }
+            if (related.contains("forum")) {
+                forum = ForumController.forumDataResponse(forumService.getForumBySlug(post.getForum()));
+            }
+            if (related.contains("thread")) {
+                thread = ThreadController.threadDataResponse(threadService.getThreadById(post.getThreadId()));
+            }
+        }
+        return ResponseEntity.ok(postDetailResponse(author, forum, postDataResponse(post), thread));
+    }
+
+    private static JSONObject postDataResponse(Post post) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", post.getAuthor());
         formDetailsJson.put("created", post.getCreated());
@@ -122,20 +147,29 @@ class PostController {
         return formDetailsJson;
     }
 
-    private static JSONObject SortResponse(JSONArray result, String marker) {
+    private static JSONObject sortResponse(JSONArray result, String marker) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("marker", marker);
         formDetailsJson.put("posts", result);
         return formDetailsJson;
     }
 
-    private JSONArray PostListResponse(List<Post> posts) {
+    private static JSONObject postDetailResponse(JSONObject author, JSONObject forum ,JSONObject post, JSONObject thread) {
+        final JSONObject postDetailsJson = new JSONObject();
+        postDetailsJson.put("author", author);
+        postDetailsJson.put("forum", forum);
+        postDetailsJson.put("post", post);
+        postDetailsJson.put("thread", thread);
+        return postDetailsJson;
+    }
+
+    private JSONArray postListResponse(List<Post> posts) {
         final JSONArray jsonArray = new JSONArray();
         for(Post p : posts) {
             if (p == null) {
                 continue;
             }
-            jsonArray.add(PostDataResponse(p));
+            jsonArray.add(postDataResponse(p));
         }
         return jsonArray;
     }

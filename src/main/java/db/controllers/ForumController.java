@@ -47,12 +47,12 @@ class ForumController {
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating forum - forum already exists!");
             forum = forumService.getForumBySlug(slug);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ForumDataResponse(forum));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(forumDataResponse(forum));
         } catch (DataAccessException e) {
             LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ForumDataResponse(forum));
+        return ResponseEntity.status(HttpStatus.CREATED).body(forumDataResponse(forum));
     }
 
     @RequestMapping(path = "/api/forum/{slug}/details", method = RequestMethod.GET, produces = "application/json")
@@ -61,7 +61,7 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(ForumDataResponse(forum));
+        return ResponseEntity.status(HttpStatus.OK).body(forumDataResponse(forum));
     }
 
     @RequestMapping(path = "/api/forum/{slug}/users", method = RequestMethod.GET, produces = "application/json")
@@ -73,10 +73,10 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(UserController.UserListResponse(userService.getUsersForum(slug, limit, since, desc)));
+        return ResponseEntity.status(HttpStatus.OK).body(UserController.userListResponse(userService.getUsersForum(slug, limit, since, desc)));
     }
 
-    private static JSONObject ForumDataResponse(Forum forum) {
+    static JSONObject forumDataResponse(Forum forum) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("slug", forum.getSlug());
         formDetailsJson.put("title", forum.getTitle());

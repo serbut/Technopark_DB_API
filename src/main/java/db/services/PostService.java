@@ -5,6 +5,7 @@ import db.models.Thread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 
@@ -115,6 +116,18 @@ public final class PostService {
                 "WHERE parent_id = 0 AND t.slug = ? " +
                 "ORDER BY p.id " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
         return template.query(parentsQuery, postIdMapper, threadSlug, limit, offset);
+    }
+
+    public Post getPostById(int id) {
+        try {
+            return template.queryForObject("SELECT p.id, nickname, created, f.slug as slug, p.message, thread_id, isEdited, parent_id FROM post p " +
+                    "JOIN forum f ON (p.forum_id = f.id) " +
+                    "JOIN \"user\" u ON (u.id = p.user_id) " +
+                    "WHERE (p.id) = ?", postMapper, id);
+        }
+        catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     private static class PostCreatePst implements PreparedStatementCreator {

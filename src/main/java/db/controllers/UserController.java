@@ -59,9 +59,9 @@ class UserController {
                 }
             }
 
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(UserListResponse(duplicates));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(userListResponse(duplicates));
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserDataResponse(user));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userDataResponse(user));
     }
 
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
@@ -70,7 +70,7 @@ class UserController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(UserDataResponse(user));
+        return ResponseEntity.status(HttpStatus.OK).body(userDataResponse(user));
     }
 
     @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
@@ -90,10 +90,10 @@ class UserController {
             LOGGER.info("Error updating user - user doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(UserDataResponse(user));
+        return ResponseEntity.status(HttpStatus.OK).body(userDataResponse(user));
     }
 
-    private static JSONObject UserDataResponse(User user) {
+    static JSONObject userDataResponse(User user) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("about", user.getAbout());
         formDetailsJson.put("email", user.getEmail());
@@ -102,14 +102,14 @@ class UserController {
         return formDetailsJson;
     }
 
-    static String UserListResponse(List<User> users) {
+    static String userListResponse(List<User> users) {
         final JSONArray jsonArray = new JSONArray();
 
         for(User u : users) {
             if (u == null) {
                 continue;
             }
-            jsonArray.add(UserDataResponse(u));
+            jsonArray.add(userDataResponse(u));
         }
         return jsonArray.toString();
     }
