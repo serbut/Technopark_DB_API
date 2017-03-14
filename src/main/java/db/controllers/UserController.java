@@ -2,6 +2,8 @@ package db.controllers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import db.models.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -16,8 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
-
 /**
  * Created by sergeybutorin on 20.02.17.
  */
@@ -27,6 +27,8 @@ import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 class UserController {
     @Autowired
     private UserService userService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
 
     @RequestMapping(path = "/api/user", method = RequestMethod.GET)
     public void createTable() {

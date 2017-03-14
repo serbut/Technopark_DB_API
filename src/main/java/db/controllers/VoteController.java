@@ -5,18 +5,20 @@ import db.models.Vote;
 import db.services.ThreadService;
 import db.services.UserService;
 import db.services.VoteService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
 
 /**
  * Created by sergeybutorin on 09.03.17.
  */
 @RestController
 public class VoteController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(VoteController.class.getName());
 
     @Autowired
     private ThreadService threadService;

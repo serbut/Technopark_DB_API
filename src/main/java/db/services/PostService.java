@@ -185,7 +185,6 @@ public final class PostService {
 
     private final RowMapper<Post> postMapper = (rs, rowNum) -> {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+03:00"));
         final int id = rs.getInt("id");
         final String author = rs.getString("nickname");
         final Timestamp created = rs.getTimestamp("created");

@@ -5,6 +5,8 @@ import db.models.Forum;
 import db.services.ForumService;
 import db.services.UserService;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -12,14 +14,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
-
 /**
  * Created by sergey on 26.02.17.
  */
 @SuppressWarnings("unchecked")
 @RestController
 class ForumController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ForumController.class.getName());
+
     @Autowired
     private ForumService forumService;
 

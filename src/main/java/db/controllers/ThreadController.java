@@ -10,6 +10,8 @@ import db.services.UserService;
 import db.services.VoteService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -19,15 +21,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
-
-
 /**
  * Created by sergeybutorin on 27.02.17.
  */
 @SuppressWarnings("unchecked")
 @RestController
 class ThreadController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadController.class.getName());
+
     @Autowired
     private ThreadService threadService;
 

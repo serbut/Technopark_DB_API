@@ -9,9 +9,10 @@ import db.services.ForumService;
 import db.services.PostService;
 import db.services.ThreadService;
 import db.services.UserService;
-import javafx.geometry.Pos;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +23,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.sun.xml.internal.ws.spi.db.BindingContextFactory.LOGGER;
-
 /**
  * Created by sergey on 05.03.17.
  */
 @SuppressWarnings("unchecked")
 @RestController
 class PostController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostController.class.getName());
+
     @Autowired
     private ThreadService threadService;
 
