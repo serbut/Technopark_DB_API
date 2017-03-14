@@ -45,7 +45,7 @@ public class VoteService {
                 "user_id INT REFERENCES \"user\"(id) NOT NULL," +
                 "voice SMALLINT," +
                 "thread_id INT REFERENCES thread(id) NOT NULL," +
-                "UNIQUE (user_id, thread_id)\n)";
+                "UNIQUE (user_id, thread_id))";
         template.execute(createTableVotes);
         LOGGER.info("Table vote was created!");
     }

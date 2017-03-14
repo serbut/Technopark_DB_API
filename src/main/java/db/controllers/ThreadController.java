@@ -39,12 +39,6 @@ class ThreadController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping(path = "/api/thread", method = RequestMethod.GET)
-    public void createTable() {
-        threadService.clearTable();
-        threadService.createTable();
-    }
-
     @RequestMapping(path = "/api/forum/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createThread(@PathVariable(value="forum_slug") String forumSlug, @RequestBody Thread body) {
         String author = body.getAuthor();

@@ -29,12 +29,6 @@ class ForumController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping(path = "/api/forum", method = RequestMethod.GET)
-    public void createTable() {
-        forumService.clearTable();
-        forumService.createTable();
-    }
-
     @RequestMapping(path = "/api/forum/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createForum(@RequestBody Forum body) {
         final String slug = body.getSlug();

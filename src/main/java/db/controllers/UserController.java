@@ -30,12 +30,6 @@ class UserController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
 
-    @RequestMapping(path = "/api/user", method = RequestMethod.GET)
-    public void createTable() {
-        userService.clearTable();
-        userService.createTable();
-    }
-
     @RequestMapping(path = "/api/user/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
         final String about = body.getAbout();
