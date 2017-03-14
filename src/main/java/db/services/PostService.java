@@ -130,6 +130,19 @@ public final class PostService {
         }
     }
 
+    public Post update(int id, String message) {
+        final String query = "UPDATE post SET " +
+                "message = ?, " +
+                "isEdited = true " +
+                "WHERE id = ?";
+        final int rows = template.update(query, message, id);
+        if (rows == 0) {
+            LOGGER.info("Error update thread profile because post with such id does not exist!");
+            return null;
+        }
+        return getPostById(id);
+    }
+
     private static class PostCreatePst implements PreparedStatementCreator {
         private final Post post;
 

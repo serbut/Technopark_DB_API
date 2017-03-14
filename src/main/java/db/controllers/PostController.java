@@ -134,6 +134,21 @@ class PostController {
         return ResponseEntity.ok(postDetailResponse(author, forum, postDataResponse(post), thread));
     }
 
+    @RequestMapping(path = "/api/post/{id}/details", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    public ResponseEntity updatePostDetails(@PathVariable(value="id") int postId, @RequestBody Post body) {
+        final String message = body.getMessage();
+        Post post;
+        post = postService.getPostById(postId);
+        if (post == null) {
+            LOGGER.info("Post with such id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        if (message != null && !message.equals(post.getMessage())) {
+            post = postService.update(postId, message);
+        }
+        return ResponseEntity.ok(postDataResponse(post));
+    }
+
     private static JSONObject postDataResponse(Post post) {
         final JSONObject formDetailsJson = new JSONObject();
         formDetailsJson.put("author", post.getAuthor());
