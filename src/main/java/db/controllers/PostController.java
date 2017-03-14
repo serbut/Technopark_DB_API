@@ -9,6 +9,7 @@ import db.services.ForumService;
 import db.services.PostService;
 import db.services.ThreadService;
 import db.services.UserService;
+import javafx.geometry.Pos;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,13 @@ class PostController {
             final String message = postBody.getMessage();
             final boolean isEdited = postBody.getIsEdited();
             final int parentId = postBody.getParentId();
+            if (parentId != 0) {
+                Post parentPost = postService.getPostById(parentId);
+                if (parentPost == null || parentPost.getThreadId() != thread.getId()) {
+                    LOGGER.info("Error creating post - parent is not in this thread!");
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("");
+                }
+            }
             try { // этот блок вынести
                 author = userService.getUserByNickname(author).getNickname();//убрать это
             } catch (NullPointerException e) {

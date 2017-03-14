@@ -150,12 +150,7 @@ public final class PostService {
     }
 
     public int getCount() {
-//        try {
-            return template.queryForObject("SELECT COUNT(*) FROM post", countMapper);
-//        }
-//        catch (EmptyResultDataAccessException e) {
-//            return 0;
-//        }
+        return template.queryForObject("SELECT COUNT(*) FROM post", countMapper);
     }
 
     private static class PostCreatePst implements PreparedStatementCreator {
