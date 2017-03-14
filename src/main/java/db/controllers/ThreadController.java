@@ -122,7 +122,7 @@ class ThreadController {
 
     @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug,
-                                     @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
+                                     @RequestParam(name = "limit", required = false, defaultValue = "100") int limit,
                                      @RequestParam(name = "since", required = false) String sinceString,
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать

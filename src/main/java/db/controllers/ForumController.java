@@ -66,7 +66,7 @@ class ForumController {
 
     @RequestMapping(path = "/api/forum/{slug}/users", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getUserList(@PathVariable(value="slug") String slug,
-                                      @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
+                                      @RequestParam(name = "limit", required = false, defaultValue = "100") int limit,
                                       @RequestParam(name = "since", required = false) String since,
                                       @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Forum forum = forumService.getForumBySlug(slug);

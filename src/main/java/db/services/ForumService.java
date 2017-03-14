@@ -73,23 +73,12 @@ public final class ForumService {
 
     public Forum getForumBySlug(String slug) {
         try {
-            return template.queryForObject("WITH forum AS (SELECT f.id as id, f.slug as slug, f.title as title, nickname, p.id as pid, t.id as tid FROM forum f " + //переписать эту дичь
+            return template.queryForObject("WITH forum AS (SELECT f.id AS id, f.slug AS slug, f.title AS title, nickname, p.id AS pid, t.id AS tid FROM forum f " + //переписать эту дичь
                             "JOIN \"user\" u ON (u.id = f.user_id) LEFT JOIN post p ON (p.forum_id = f.id) " +                                                          //но работает!
                             "LEFT JOIN thread t ON (t.forum_id = f.id) WHERE LOWER (f.slug) = LOWER (?))" +
-                            "SELECT DISTINCT f.id, f.slug, f.title, f.nickname, p.count AS posts, t.count AS threads from forum f " +
+                            "SELECT DISTINCT f.id, f.slug, f.title, f.nickname, p.count AS posts, t.count AS threads FROM forum f " +
                             "CROSS JOIN (SELECT COUNT (pid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.tid) AS p " +
-                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t "
-
-                    /*"SELECT f.id, f.slug, f.title, nickname FROM (SELECT f.id, f.slug, f.title, nickname, p.id, t.id FROM forum f " +
-                    "JOIN \"user\" u ON (u.id = f.user_id) " +
-                    "LEFT JOIN post p ON (p.forum_id = f.id) " +
-                    "LEFT JOIN thread t ON (t.forum_id = f.id) " +
-                    "WHERE LOWER (f.slug) = LOWER (?) " +
-                    "GROUP BY f.id, f.slug, f.title, nickname) AS forum " +
-                    "UNION " +
-                    "SELECT COUNT(p.id) AS posts FROM forum " +
-                    "UNION " +
-                    "SELECT COUNT (t.id) AS threads FROM forum"*/, forumMapper, slug);
+                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t ", forumMapper, slug);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
