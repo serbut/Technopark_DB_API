@@ -28,6 +28,12 @@ public class VoteService {
     private static final Logger LOGGER = LoggerFactory.getLogger(VoteService.class.getName());
 
     public void clearTable() {
+        final String clearTable = "TRUNCATE TABLE vote CASCADE";
+        template.execute(clearTable);
+        LOGGER.info("Table vote was dropped");
+    }
+
+    public void deleteTable() {
         final String dropTableVotes = "DROP TABLE IF EXISTS vote CASCADE";
         template.execute(dropTableVotes);
         LOGGER.info("Table vote was dropped");

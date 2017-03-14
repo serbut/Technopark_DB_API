@@ -30,11 +30,17 @@ public final class ForumService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ForumService.class.getName());
 
     public void clearTable() {
+        final String clearTable = "TRUNCATE TABLE forum CASCADE";
+        template.execute(clearTable);
+        LOGGER.info("Table forum was cleared");
+    }
+
+    public void deleteTable() {
         final String dropTable = "DROP TABLE IF EXISTS forum CASCADE";
         template.execute(dropTable);
         final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug_forum";
         template.execute(dropUniqueSlug);
-        LOGGER.info("Table forum dropped");
+        LOGGER.info("Table forum was dropped");
     }
 
     public void createTable() {
@@ -53,6 +59,10 @@ public final class ForumService {
         template.update(new ForumPst(forum));
         LOGGER.info("Forum with slug \"{}\" created", forum.getSlug());
         return forum;
+    }
+
+    public int getCount() {
+        return template.queryForObject("SELECT COUNT(*) FROM forum", countMapper);
     }
 
     private static class ForumPst implements PreparedStatementCreator {
@@ -84,6 +94,8 @@ public final class ForumService {
             return null;
         }
     }
+
+    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
 
     private final RowMapper<Forum> forumMapper = (rs, rowNum) -> {
         final int id = rs.getInt("id");

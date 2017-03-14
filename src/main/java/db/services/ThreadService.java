@@ -33,10 +33,14 @@ public final class ThreadService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadService.class.getName());
 
     public void clearTable() {
+        final String clearTable = "TRUNCATE TABLE thread CASCADE";
+        template.execute(clearTable);
+        LOGGER.info("Table thread was cleared");
+    }
+
+    public void deleteTable() {
         final String dropTable = "DROP TABLE IF EXISTS thread CASCADE";
         template.execute(dropTable);
-        final String dropTableVotes = "DROP TABLE IF EXISTS vote CASCADE";
-        template.execute(dropTableVotes);
         LOGGER.info("Table thread was dropped");
     }
 
@@ -131,6 +135,10 @@ public final class ThreadService {
         return template.query(query, threadMapper, params.toArray());
     }
 
+    public int getCount() {
+        return template.queryForObject("SELECT COUNT(*) FROM thread", countMapper);
+    }
+
     private static class ThreadCreatePst implements PreparedStatementCreator {
         private final Thread thread;
 
@@ -154,6 +162,8 @@ public final class ThreadService {
     }
 
     private final RowMapper<Integer> threadIdMapper = (rs, rowNum) -> rs.getInt("currval");
+
+    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
 
     private final RowMapper<Thread> threadMapper = (rs, rowNum) -> {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");

@@ -44,18 +44,28 @@ class PostController {
     @RequestMapping(path = "/api/thread/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPost(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
         Thread thread;
-        try {
+        try { // этот блок вынести
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
         } catch(NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
+        if (thread == null) {
+            LOGGER.info("Error creating posts - thread with such slug/id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
         List<Post> posts = new ArrayList<>();
         for(Post postBody: body) {
-            final String author = postBody.getAuthor();
+            String author = postBody.getAuthor();
             String created = postBody.getCreated();
             final String message = postBody.getMessage();
             final boolean isEdited = postBody.getIsEdited();
             final int parentId = postBody.getParentId();
+            try { // этот блок вынести
+                author = userService.getUserByNickname(author).getNickname();//убрать это
+            } catch (NullPointerException e) {
+                LOGGER.info("Error creating post - user not found!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+            }
             if (created == null) {
                 LocalDateTime a = LocalDateTime.now();
                 created = a.toString() + "+03:00";
@@ -74,7 +84,7 @@ class PostController {
                                    @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
                                    @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         Thread thread;
-        try {
+        try { // этот блок вынести
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
         } catch(NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);

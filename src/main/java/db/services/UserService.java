@@ -30,6 +30,12 @@ public final class UserService {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());
 
     public void clearTable() {
+        final String clearTable = "TRUNCATE TABLE \"user\" CASCADE";
+        template.execute(clearTable);
+        LOGGER.info("Table user was cleared");
+    }
+
+    public void deleteTable() {
         final String dropTable = "DROP TABLE IF EXISTS \"user\" CASCADE";
         template.execute(dropTable);
         final String dropUniqueEmail = "DROP INDEX IF EXISTS unique_email";
@@ -100,13 +106,8 @@ public final class UserService {
         }
     }
 
-    public User getUserById(int id) {
-        try {
-            return template.queryForObject("SELECT * FROM \"user\" WHERE id = ?", userMapper, id);
-        }
-        catch (EmptyResultDataAccessException e) {
-            return null;
-        }
+    public int getCount() {
+        return template.queryForObject("SELECT COUNT(*) FROM \"user\"", countMapper);
     }
 
     public List<User> getUsersForum (String forumSlug, int limit, String since, boolean desc) {
@@ -136,6 +137,8 @@ public final class UserService {
         params.add(limit);
         return template.query(query, userMapper, params.toArray());
     }
+
+    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
 
     private final RowMapper<User> userMapper = (rs, rowNum) -> {
         final int id = rs.getInt("id");

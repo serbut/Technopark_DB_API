@@ -38,6 +38,12 @@ public final class PostService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PostService.class.getName());
 
     public void clearTable() {
+        final String clearTable = "TRUNCATE TABLE post CASCADE";
+        template.execute(clearTable);
+        LOGGER.info("Table post was cleared");
+    }
+
+    public void deleteTable() {
         final String dropTable = "DROP TABLE IF EXISTS post CASCADE";
         template.execute(dropTable);
         LOGGER.info("Table post was dropped");
@@ -143,6 +149,15 @@ public final class PostService {
         return getPostById(id);
     }
 
+    public int getCount() {
+//        try {
+            return template.queryForObject("SELECT COUNT(*) FROM post", countMapper);
+//        }
+//        catch (EmptyResultDataAccessException e) {
+//            return 0;
+//        }
+    }
+
     private static class PostCreatePst implements PreparedStatementCreator {
         private final Post post;
 
@@ -167,9 +182,11 @@ public final class PostService {
         }
     }
 
-    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("id");
+    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("id"); //вынести
 
-    private final RowMapper<Integer> postCurrentIdMapper = (rs, rowNum) -> rs.getInt("currval");
+    private final RowMapper<Integer> postCurrentIdMapper = (rs, rowNum) -> rs.getInt("currval"); //вынести
+
+    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
 
     private final RowMapper<Post> postMapper = (rs, rowNum) -> {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
