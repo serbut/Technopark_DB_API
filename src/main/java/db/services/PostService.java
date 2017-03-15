@@ -1,7 +1,6 @@
 package db.services;
 
 import db.models.Post;
-import db.models.Thread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -13,14 +12,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
 
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 
@@ -66,7 +62,7 @@ public final class PostService {
     public Post create(Post post) {
         try {
             template.update(new PostCreatePst(post));
-            post.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('post', 'id'))", postCurrentIdMapper)); //возможно от этого можно избавиться
+            post.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('post', 'id'))", Mappers.currentIdMapper)); //возможно от этого можно избавиться
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating post - post already exists!");
             return null;
@@ -81,7 +77,7 @@ public final class PostService {
                 "JOIN forum f ON (t.forum_id = f.id)" +
                 "JOIN \"user\" u ON (u.id = p.user_id)" +
                 "ORDER BY created " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
-        return template.query(query, postMapper, threadSlug, limit, offset);
+        return template.query(query, Mappers.postMapper, threadSlug, limit, offset);
     }
 
     public List<Post> getPostsTree(String threadSlug, int limit, int offset, boolean desc) {
@@ -95,7 +91,7 @@ public final class PostService {
                 "JOIN forum f ON (t.forum_id = f.id) " +
                 "JOIN \"user\" u ON (u.id = tr.user_id) " +
                 "ORDER BY posts " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
-        return template.query(query, postMapper, threadSlug, limit, offset);
+        return template.query(query, Mappers.postMapper, threadSlug, limit, offset);
     }
     public List<Post> getPostsParentsTree(String threadSlug, boolean desc, List<Integer> parentIds) {
         String query = null;
@@ -111,7 +107,7 @@ public final class PostService {
                     "JOIN forum f ON (t.forum_id = f.id) " +
                     "JOIN \"user\" u ON (u.id = tr.user_id) " +
                     "ORDER BY posts " + (desc ? "DESC" : "ASC");
-            result.addAll(template.query(query, postMapper, id, threadSlug));
+            result.addAll(template.query(query, Mappers.postMapper, id, threadSlug));
         }
         return result;
     }
@@ -121,7 +117,7 @@ public final class PostService {
                 "JOIN thread t ON (t.id = p.thread_id) " +
                 "WHERE parent_id = 0 AND t.slug = ? " +
                 "ORDER BY p.id " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
-        return template.query(parentsQuery, postIdMapper, threadSlug, limit, offset);
+        return template.query(parentsQuery, Mappers.idMapper, threadSlug, limit, offset);
     }
 
     public Post getPostById(int id) {
@@ -129,7 +125,7 @@ public final class PostService {
             return template.queryForObject("SELECT p.id, nickname, created, f.slug as slug, p.message, thread_id, isEdited, parent_id FROM post p " +
                     "JOIN forum f ON (p.forum_id = f.id) " +
                     "JOIN \"user\" u ON (u.id = p.user_id) " +
-                    "WHERE (p.id) = ?", postMapper, id);
+                    "WHERE (p.id) = ?", Mappers.postMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -150,7 +146,7 @@ public final class PostService {
     }
 
     public int getCount() {
-        return template.queryForObject("SELECT COUNT(*) FROM post", countMapper);
+        return template.queryForObject("SELECT COUNT(*) FROM post", Mappers.countMapper);
     }
 
     private static class PostCreatePst implements PreparedStatementCreator {
@@ -176,24 +172,4 @@ public final class PostService {
             return pst;
         }
     }
-
-    private final RowMapper<Integer> postIdMapper = (rs, rowNum) -> rs.getInt("id"); //вынести
-
-    private final RowMapper<Integer> postCurrentIdMapper = (rs, rowNum) -> rs.getInt("currval"); //вынести
-
-    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
-
-    private final RowMapper<Post> postMapper = (rs, rowNum) -> {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
-        final int id = rs.getInt("id");
-        final String author = rs.getString("nickname");
-        final Timestamp created = rs.getTimestamp("created");
-        final String forum = rs.getString("slug");
-        final boolean isEdited = rs.getBoolean("isEdited");
-        final String message = rs.getString("message");
-        final int parentId = rs.getInt("parent_id");
-        final int threadId = rs.getInt("thread_id");
-        return new Post(id, author, dateFormat.format(created), forum, message, isEdited, parentId, threadId);
-    };
-
 }

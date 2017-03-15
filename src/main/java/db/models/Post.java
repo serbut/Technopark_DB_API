@@ -36,14 +36,6 @@ public class Post {
         this.threadId = threadId;
     }
 
-    public Post(String author, String created, String message, boolean isEdited, int threadId) {
-        this.author = author;
-        this.created = created;
-        this.isEdited = isEdited;
-        this.message = message;
-        this.threadId = threadId;
-    }
-
     public Post(int id, String author, String created, String forum, String message, boolean isEdited, int parentId, int threadId) {
         this.id = id;
         this.author = author;

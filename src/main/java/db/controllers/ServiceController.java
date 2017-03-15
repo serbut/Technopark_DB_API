@@ -1,6 +1,5 @@
 package db.controllers;
 
-import db.models.Post;
 import db.services.*;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;

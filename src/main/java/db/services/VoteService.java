@@ -5,13 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 /**
  * Created by sergeybutorin on 09.03.17.
@@ -66,8 +60,6 @@ public class VoteService {
 
     public int getVotesForThread(int id) {
         return template.queryForObject("SELECT SUM(voice) as votes FROM vote " +
-                "WHERE (thread_id) = ?", voteMapper, id);
+                "WHERE (thread_id) = ?", Mappers.voteMapper, id);
     }
-
-    private final RowMapper<Integer> voteMapper = (rs, rowNum) -> rs.getInt("votes");
 }

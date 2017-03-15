@@ -33,8 +33,4 @@ public class Vote {
     public byte getVoice() {
         return voice;
     }
-
-    public void setVoice(byte voice) {
-        this.voice = voice;
-    }
 }

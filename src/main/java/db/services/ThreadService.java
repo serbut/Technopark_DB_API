@@ -1,23 +1,18 @@
 package db.services;
 
 import db.models.Thread;
-import db.models.Vote;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
 
 /**
  * Created by sergeybutorin on 27.02.17.
@@ -61,7 +56,7 @@ public final class ThreadService {
 
     public Thread create(Thread thread) {
         template.update(new ThreadCreatePst(thread));
-        thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", threadIdMapper)); //возможно от этого можно избавиться
+        thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", Mappers.currentIdMapper)); //возможно от этого можно избавиться
         LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
         return thread;
     }
@@ -86,7 +81,7 @@ public final class ThreadService {
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
                     "LEFT JOIN vote v ON (v.thread_id = t.id)" +
                     "WHERE LOWER (t.slug) = ?" +
-                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", threadMapper, slug.toLowerCase());
+                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", Mappers.threadMapper, slug.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -100,7 +95,7 @@ public final class ThreadService {
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
                     "LEFT JOIN vote v ON (v.thread_id = t.id)" +
                     "WHERE (t.id) = ?" +
-                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", threadMapper, id);
+                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", Mappers.threadMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -132,11 +127,11 @@ public final class ThreadService {
                 "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title " +
                 "ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);
-        return template.query(query, threadMapper, params.toArray());
+        return template.query(query, Mappers.threadMapper, params.toArray());
     }
 
     public int getCount() {
-        return template.queryForObject("SELECT COUNT(*) FROM thread", countMapper);
+        return template.queryForObject("SELECT COUNT(*) FROM thread", Mappers.countMapper);
     }
 
     private static class ThreadCreatePst implements PreparedStatementCreator {
@@ -160,21 +155,4 @@ public final class ThreadService {
             return pst;
         }
     }
-
-    private final RowMapper<Integer> threadIdMapper = (rs, rowNum) -> rs.getInt("currval");
-
-    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
-
-    private final RowMapper<Thread> threadMapper = (rs, rowNum) -> {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
-        final int id = rs.getInt("id");
-        final String author = rs.getString("nickname");
-        final Timestamp created = rs.getTimestamp("created");
-        final String forum = rs.getString("forum_slug");
-        final String message = rs.getString("message");
-        final String slug = rs.getString("slug");
-        final String title = rs.getString("title");
-        final int votes = rs.getInt("votes");
-        return new Thread(id, author, dateFormat.format(created), forum, message, slug, title, votes);
-    };
 }

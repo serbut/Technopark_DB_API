@@ -19,7 +19,7 @@ CREATE UNIQUE INDEX unique_email ON "user" (LOWER(email));
 CREATE UNIQUE INDEX unique_nickname ON "user" (LOWER(nickname));
 
 CREATE TABLE IF NOT EXISTS  forum (
-                id SERIAL NOT NULL PRIMARY KEY, 
+                id SERIAL NOT NULL PRIMARY KEY,
                 slug VARCHAR(100),
                 title VARCHAR(100) NOT NULL ,
                 user_id INT REFERENCES "user"(id) NOT NULL);

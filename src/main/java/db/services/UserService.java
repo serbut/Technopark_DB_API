@@ -6,13 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,7 +85,7 @@ public final class UserService {
 
     public User getUserByNickname(String nickname) {
         try {
-            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (nickname) = ?", userMapper, nickname.toLowerCase());
+            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (nickname) = ?", Mappers.userMapper, nickname.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -99,7 +94,7 @@ public final class UserService {
 
     public User getUserByEmail(String email) {
         try {
-            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (email) = ?", userMapper, email.toLowerCase());
+            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (email) = ?", Mappers.userMapper, email.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -107,7 +102,7 @@ public final class UserService {
     }
 
     public int getCount() {
-        return template.queryForObject("SELECT COUNT(*) FROM \"user\"", countMapper);
+        return template.queryForObject("SELECT COUNT(*) FROM \"user\"", Mappers.countMapper);
     }
 
     public List<User> getUsersForum (String forumSlug, int limit, String since, boolean desc) {
@@ -134,17 +129,8 @@ public final class UserService {
                 sinceCreated +
                 " ORDER BY LOWER (nickname COLLATE \"ucs_basic\") " + sort + " LIMIT ?";
         params.add(limit);
-        return template.query(query, userMapper, params.toArray());
+        return template.query(query, Mappers.userMapper, params.toArray());
     }
 
-    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
 
-    private final RowMapper<User> userMapper = (rs, rowNum) -> {
-        final int id = rs.getInt("id");
-        final String about = rs.getString("about");
-        final String nickname = rs.getString("nickname");
-        final String fullname = rs.getString("fullname");
-        final String email = rs.getString("email");
-        return new User(id, about, email,fullname, nickname);
-    };
 }

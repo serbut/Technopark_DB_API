@@ -1,24 +1,21 @@
 package db.controllers;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import db.models.Forum;
+import db.models.Post;
 import db.models.Thread;
 import db.models.Vote;
-import db.services.ForumService;
-import db.services.ThreadService;
-import db.services.UserService;
-import db.services.VoteService;
+import db.services.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,54 +23,23 @@ import java.util.List;
  */
 @SuppressWarnings("unchecked")
 @RestController
+@RequestMapping(path = "/api/thread")
 class ThreadController {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadController.class.getName());
 
     @Autowired
     private ThreadService threadService;
 
     @Autowired
-    private ForumService forumService;
+    private VoteService voteService;
 
     @Autowired
     private UserService userService;
 
-    @RequestMapping(path = "/api/forum/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity createThread(@PathVariable(value="forum_slug") String forumSlug, @RequestBody Thread body) {
-        String author = body.getAuthor();
-        String created = body.getCreated();
-        final String message = body.getMessage();
-        final String slug = body.getSlug();
-        final String title = body.getTitle();
-        if (created == null) {
-            created = "1970-01-01T00:00:00Z";
-        }
-        Thread thread = null;
-        try {
-            author = userService.getUserByNickname(author).getNickname();//убрать это
-            forumSlug = forumService.getForumBySlug(forumSlug).getSlug(); //и это!
-            thread = threadService.create(new Thread(author, created, forumSlug, message, slug, title));
-        } catch (NullPointerException e) { //убрать это
-            LOGGER.info("Error creating thread - user not found!");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
-        } catch (DuplicateKeyException e) {
-            try {
-                thread = threadService.getThreadBySlug(slug);
-            }
-            catch (NullPointerException ex) {
-                LOGGER.info("There is no thread with such slug");
-            }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(threadDataResponse(thread));
-        }
-        catch (DataAccessException e) {
-            LOGGER.info("Error creating thread - user not found!");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(threadDataResponse(thread));
-    }
+    @Autowired
+    private PostService postService;
 
-    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getSingleThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId) {
         Thread thread;
         try {
@@ -88,7 +54,7 @@ class ThreadController {
         return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
     }
 
-    @RequestMapping(path = "/api/thread/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
+    @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity updateThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
         Thread thread;
         try {
@@ -116,18 +82,114 @@ class ThreadController {
         return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
     }
 
-    @RequestMapping(path = "/api/forum/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug,
-                                     @RequestParam(name = "limit", required = false, defaultValue = "100") int limit,
-                                     @RequestParam(name = "since", required = false) String sinceString,
-                                     @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-        final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
-        if (forum == null) {
-            LOGGER.info("Error getting threads - forum with such slug not found!");
+    @RequestMapping(path = "/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Object> createPost(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
+        Thread thread;
+        try { // этот блок вынести
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+        } catch(NumberFormatException e) {
+            thread = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        if (thread == null) {
+            LOGGER.info("Error creating posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
-        return ResponseEntity.status(HttpStatus.OK).body(threadListResponse(threads).toJSONString());
+        List<Post> posts = new ArrayList<>();
+        for(Post postBody: body) {
+            String author = postBody.getAuthor();
+            String created = postBody.getCreated();
+            final String message = postBody.getMessage();
+            final boolean isEdited = postBody.getIsEdited();
+            final int parentId = postBody.getParentId();
+            if (parentId != 0) {
+                Post parentPost = postService.getPostById(parentId);
+                if (parentPost == null || parentPost.getThreadId() != thread.getId()) {
+                    LOGGER.info("Error creating post - parent is not in this thread!");
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("");
+                }
+            }
+            try { // этот блок вынести
+                author = userService.getUserByNickname(author).getNickname();//убрать это
+            } catch (NullPointerException e) {
+                LOGGER.info("Error creating post - user not found!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+            }
+            if (created == null) {
+                LocalDateTime a = LocalDateTime.now();
+                created = a.toString() + "+03:00";
+            }
+            final Post post = postService.create(new Post(author, created, message, isEdited, parentId, thread.getId()));
+            post.setForum(thread.getForum());
+            posts.add(post);
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(PostController.postListResponse(posts).toJSONString());
+    }
+
+    @RequestMapping(path = "/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getPosts(@PathVariable(value="thread_slug_or_id") String threadSlugOrId,
+                                   @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
+                                   @RequestParam(name = "marker", required = false, defaultValue = "0") String marker,
+                                   @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
+                                   @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
+        Thread thread;
+        try { // этот блок вынести
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+        } catch(NumberFormatException e) {
+            thread = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        if (thread == null) {
+            LOGGER.info("Error getting posts - thread with such slug/id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        int markerInt = Integer.parseInt(marker);
+        List<Post> posts = null;
+        switch (sort) {
+            case "flat":
+                posts = postService.getPostsFlat(thread.getSlug(), limit, markerInt, desc);
+                if(!posts.isEmpty()){
+                    markerInt += posts.size();
+                }
+                break;
+            case "tree":
+                posts = postService.getPostsTree(thread.getSlug(), limit, markerInt, desc);
+                if(!posts.isEmpty()){
+                    markerInt += posts.size();
+                }
+                break;
+            case "parent_tree":
+                List<Integer> parentIds = postService.getParents(thread.getSlug(), limit, markerInt, desc);
+                if(!parentIds.isEmpty()){
+                    markerInt += parentIds.size();
+                }
+                posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
+                break;
+        }
+        return ResponseEntity.ok(PostController.sortResponse(PostController.postListResponse(posts), String.valueOf(markerInt)));
+    }
+
+    @RequestMapping(path = "/{thread}/vote", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity addVote(@PathVariable(value="thread") String threadSlugOrId, @RequestBody Vote body) {
+        Thread thread;
+        try { // этот блок вынести
+            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
+        } catch(NumberFormatException e) {
+            thread = threadService.getThreadBySlug(threadSlugOrId);
+        }
+        if (thread == null) {
+            LOGGER.info("Error creating vote - thread with such slug/id not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        String author = body.getAuthor();
+        try { // этот блок вынести
+            author = userService.getUserByNickname(author).getNickname();//убрать это
+        } catch (NullPointerException e) {
+            LOGGER.info("Error creating vote - user not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        byte voice = body.getVoice();
+        voteService.addVote(new Vote(author, thread.getId(), voice));
+        thread.setVotes(voteService.getVotesForThread(thread.getId())); // от этого лучше бы избавиться
+        return ResponseEntity.status(HttpStatus.OK).body(ThreadController.threadDataResponse(thread));
     }
 
     static JSONObject threadDataResponse(Thread thread) {
@@ -143,7 +205,7 @@ class ThreadController {
         return formDetailsJson;
     }
 
-    private JSONArray threadListResponse(List<Thread> threads) {
+    static JSONArray threadListResponse(List<Thread> threads) {
         final JSONArray jsonArray = new JSONArray();
 
         for(Thread t : threads) {

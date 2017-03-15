@@ -1,22 +1,16 @@
 package db.services;
 
 import db.models.Forum;
-import db.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by sergey on 26.02.17.
@@ -62,7 +56,7 @@ public final class ForumService {
     }
 
     public int getCount() {
-        return template.queryForObject("SELECT COUNT(*) FROM forum", countMapper);
+        return template.queryForObject("SELECT COUNT(*) FROM forum", Mappers.countMapper);
     }
 
     private static class ForumPst implements PreparedStatementCreator {
@@ -88,22 +82,10 @@ public final class ForumService {
                             "LEFT JOIN thread t ON (t.forum_id = f.id) WHERE LOWER (f.slug) = LOWER (?))" +
                             "SELECT DISTINCT f.id, f.slug, f.title, f.nickname, p.count AS posts, t.count AS threads FROM forum f " +
                             "CROSS JOIN (SELECT COUNT (pid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.tid) AS p " +
-                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t ", forumMapper, slug);
+                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t ", Mappers.forumMapper, slug);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
-
-    private final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count"); //вынести
-
-    private final RowMapper<Forum> forumMapper = (rs, rowNum) -> {
-        final int id = rs.getInt("id");
-        final String slug = rs.getString("slug");
-        final String title = rs.getString("title");
-        final String userNickname = rs.getString("nickname");
-        final int posts = rs.getInt("posts");
-        final int threads = rs.getInt("threads");
-        return new Forum(id, slug, title, userNickname, posts, threads);
-    };
 }

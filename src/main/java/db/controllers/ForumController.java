@@ -1,8 +1,9 @@
 package db.controllers;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import db.models.Forum;
+import db.models.Thread;
 import db.services.ForumService;
+import db.services.ThreadService;
 import db.services.UserService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -14,13 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * Created by sergey on 26.02.17.
  */
 @SuppressWarnings("unchecked")
 @RestController
+@RequestMapping(path = "/api/forum")
 class ForumController {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ForumController.class.getName());
 
     @Autowired
@@ -29,7 +32,10 @@ class ForumController {
     @Autowired
     private UserService userService;
 
-    @RequestMapping(path = "/api/forum/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @Autowired
+    private ThreadService threadService;
+
+    @RequestMapping(path = "/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createForum(@RequestBody Forum body) {
         final String slug = body.getSlug();
         final String title = body.getTitle();
@@ -52,7 +58,7 @@ class ForumController {
         return ResponseEntity.status(HttpStatus.CREATED).body(forumDataResponse(forum));
     }
 
-    @RequestMapping(path = "/api/forum/{slug}/details", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/{slug}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getForum(@PathVariable(value="slug") String slug) {
         final Forum forum = forumService.getForumBySlug(slug);
         if (forum == null) {
@@ -61,7 +67,7 @@ class ForumController {
         return ResponseEntity.status(HttpStatus.OK).body(forumDataResponse(forum));
     }
 
-    @RequestMapping(path = "/api/forum/{slug}/users", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/{slug}/users", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getUserList(@PathVariable(value="slug") String slug,
                                       @RequestParam(name = "limit", required = false, defaultValue = "100") int limit,
                                       @RequestParam(name = "since", required = false) String since,
@@ -71,6 +77,54 @@ class ForumController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(UserController.userListResponse(userService.getUsersForum(slug, limit, since, desc)));
+    }
+
+    @RequestMapping(path = "/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    public ResponseEntity createThread(@PathVariable(value="forum_slug") String forumSlug, @RequestBody Thread body) {
+        String author = body.getAuthor();
+        String created = body.getCreated();
+        final String message = body.getMessage();
+        final String slug = body.getSlug();
+        final String title = body.getTitle();
+        if (created == null) {
+            created = "1970-01-01T00:00:00Z";
+        }
+        Thread thread = null;
+        try {
+            author = userService.getUserByNickname(author).getNickname();//убрать это
+            forumSlug = forumService.getForumBySlug(forumSlug).getSlug(); //и это!
+            thread = threadService.create(new Thread(author, created, forumSlug, message, slug, title));
+        } catch (NullPointerException e) { //убрать это
+            LOGGER.info("Error creating thread - user not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        } catch (DuplicateKeyException e) {
+            try {
+                thread = threadService.getThreadBySlug(slug);
+            }
+            catch (NullPointerException ex) {
+                LOGGER.info("There is no thread with such slug");
+            }
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ThreadController.threadDataResponse(thread));
+        }
+        catch (DataAccessException e) {
+            LOGGER.info("Error creating thread - user not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadController.threadDataResponse(thread));
+    }
+
+    @RequestMapping(path = "/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
+    public ResponseEntity getThreads(@PathVariable(value="forum_slug") String forumSlug,
+                                     @RequestParam(name = "limit", required = false, defaultValue = "100") int limit,
+                                     @RequestParam(name = "since", required = false) String sinceString,
+                                     @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
+        final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
+        if (forum == null) {
+            LOGGER.info("Error getting threads - forum with such slug not found!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
+        return ResponseEntity.status(HttpStatus.OK).body(ThreadController.threadListResponse(threads).toJSONString());
     }
 
     static JSONObject forumDataResponse(Forum forum) {

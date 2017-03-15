@@ -34,16 +34,6 @@ public class Thread {
         this.title = title;
     }
 
-    public Thread(int id, String author, String created, String forum, String message, String slug, String title) {
-        this.id = id;
-        this.author = author;
-        this.created = created;
-        this.forum = forum;
-        this.message = message;
-        this.slug = slug;
-        this.title = title;
-    }
-
     public Thread(int id, String author, String created, String forum, String message, String slug, String title, int votes) {
         this.id = id;
         this.author = author;

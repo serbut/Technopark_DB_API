@@ -1,6 +1,5 @@
 package db.controllers;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import db.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,11 +7,9 @@ import db.services.UserService;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -24,13 +21,14 @@ import java.util.List;
 
 @SuppressWarnings("unchecked")
 @RestController
+@RequestMapping(path = "/api/user")
 class UserController {
     @Autowired
     private UserService userService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
 
-    @RequestMapping(path = "/api/user/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
+    @RequestMapping(path = "/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
         final String about = body.getAbout();
         final String email = body.getEmail();
@@ -60,7 +58,7 @@ class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userDataResponse(user));
     }
 
-    @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
+    @RequestMapping(path = "/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getUser(@PathVariable(value="nickname") String nickname) {
         final User user = userService.getUserByNickname(nickname);
         if (user == null) {
@@ -69,7 +67,7 @@ class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(userDataResponse(user));
     }
 
-    @RequestMapping(path = "/api/user/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
+    @RequestMapping(path = "/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
     public ResponseEntity updateUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
         final String about = body.getAbout();
         final String email = body.getEmail();
