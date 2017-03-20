@@ -94,6 +94,7 @@ class ThreadController {
             LOGGER.info("Error creating posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
+        LocalDateTime currentTime = LocalDateTime.now();
         List<Post> posts = new ArrayList<>();
         for(Post postBody: body) {
             String author = postBody.getAuthor();
@@ -115,8 +116,7 @@ class ThreadController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
             }
             if (created == null) {
-                LocalDateTime a = LocalDateTime.now();
-                created = a.toString() + "+03:00";
+                created = currentTime.toString() + "+03:00";
             }
             final Post post = postService.create(new Post(author, created, message, isEdited, parentId, thread.getId()));
             post.setForum(thread.getForum());

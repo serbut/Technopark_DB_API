@@ -76,7 +76,7 @@ public final class PostService {
                 "JOIN thread t ON (p.thread_id = t.id AND t.slug = ?)" +
                 "JOIN forum f ON (t.forum_id = f.id)" +
                 "JOIN \"user\" u ON (u.id = p.user_id)" +
-                "ORDER BY created " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+                "ORDER BY created " + (desc ? "DESC" : "ASC") + ", p.id " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
         return template.query(query, Mappers.postMapper, threadSlug, limit, offset);
     }
 
@@ -86,11 +86,11 @@ public final class PostService {
                 "UNION ALL " +
                 "SELECT p.id, p.user_id, p.created, p.forum_id, p.isEdited, p.message, p.parent_id, p.thread_id, array_append(posts, p.id) FROM post p " +
                 "JOIN tree ON tree.id = p.parent_id) " +
-                "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, array_to_string(posts, ' ') AS posts FROM tree tr " +
+                "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, posts FROM tree tr " +
                 "JOIN thread t ON (tr.thread_id = t.id AND t.slug = ?) " +
                 "JOIN forum f ON (t.forum_id = f.id) " +
                 "JOIN \"user\" u ON (u.id = tr.user_id) " +
-                "ORDER BY posts " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
+                "ORDER BY posts " + (desc ? "DESC" : "ASC") + ", tr.id " + (desc ? "DESC" : "ASC") + " LIMIT ? OFFSET ?";
         return template.query(query, Mappers.postMapper, threadSlug, limit, offset);
     }
     public List<Post> getPostsParentsTree(String threadSlug, boolean desc, List<Integer> parentIds) {
@@ -102,11 +102,11 @@ public final class PostService {
                     "UNION ALL " +
                     "SELECT p.id, p.user_id, p.created, p.forum_id, p.isEdited, p.message, p.parent_id, p.thread_id, array_append(posts, p.id) FROM post p " +
                     "JOIN tree ON tree.id = p.parent_id) " +
-                    "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, array_to_string(posts, ' ') AS posts FROM tree tr " +
+                    "SELECT tr.id, nickname, tr.created, f.slug, isEdited, tr.message, tr.parent_id, tr.thread_id, posts FROM tree tr " +
                     "JOIN thread t ON (tr.thread_id = t.id AND t.slug = ?) " +
                     "JOIN forum f ON (t.forum_id = f.id) " +
                     "JOIN \"user\" u ON (u.id = tr.user_id) " +
-                    "ORDER BY posts " + (desc ? "DESC" : "ASC");
+                    "ORDER BY posts " + (desc ? "DESC" : "ASC") + ", tr.id " + (desc ? "DESC" : "ASC");
             result.addAll(template.query(query, Mappers.postMapper, id, threadSlug));
         }
         return result;
