@@ -26,10 +26,10 @@ CREATE TABLE IF NOT EXISTS  forum (
 
 CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug));
 
-CREATE TABLE IF NOT EXISTS  thread (
+CREATE TABLE IF NOT EXISTS thread (
                 id SERIAL NOT NULL PRIMARY KEY,
                 user_id INT REFERENCES "user"(id) NOT NULL,
-                created TIMESTAMP,
+                created TIMESTAMP DEFAULT NOW(),
                 forum_id INT REFERENCES forum(id) NOT NULL,
                 message TEXT,
                 slug VARCHAR(100),

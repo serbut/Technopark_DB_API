@@ -40,7 +40,7 @@ class Mappers {
     };
 
     static final RowMapper<Thread> threadMapper = (rs, rowNum) -> {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         final int id = rs.getInt("id");
         final String author = rs.getString("nickname");
         final Timestamp created = rs.getTimestamp("created");

@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -82,17 +84,14 @@ class ForumController {
     @RequestMapping(path = "/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createThread(@PathVariable(value="forum_slug") String forumSlug, @RequestBody Thread body) {
         String author = body.getAuthor();
-        String created = body.getCreated();
+        final String created = body.getCreated();
         final String message = body.getMessage();
         final String slug = body.getSlug();
         final String title = body.getTitle();
-        if (created == null) {
-            created = "1970-01-01T00:00:00Z";
-        }
         Thread thread = null;
         try {
             author = userService.getUserByNickname(author).getNickname();//убрать это
-            forumSlug = forumService.getForumBySlug(forumSlug).getSlug(); //и это!
+            forumSlug = forumService.getForumBySlug(forumSlug).getSlug();//и это!
             thread = threadService.create(new Thread(author, created, forumSlug, message, slug, title));
         } catch (NullPointerException e) { //убрать это
             LOGGER.info("Error creating thread - user not found!");

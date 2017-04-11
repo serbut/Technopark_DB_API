@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,7 +108,6 @@ public final class ThreadService {
         params.add(forumSlug);
         final String sort;
         final String createdSign;
-        String sinceCreated = ""; //переписать на StringBuilder
         if (desc) {
             sort = "DESC";
             createdSign = "<=";
@@ -115,10 +115,10 @@ public final class ThreadService {
             sort = "ASC";
             createdSign = ">=";
         }
+        String sinceCreated = " ";
         if (sinceString != null) {
             sinceCreated = "WHERE created " + createdSign + " ? ";
-            final Timestamp since = Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME));
-            params.add(since);
+            params.add(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME)));
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND f.slug = ?)" +
@@ -147,7 +147,11 @@ public final class ThreadService {
                     "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?)";
             final PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, thread.getAuthor());
-            pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
+            if (thread.getCreated() != null) {
+                pst.setTimestamp(2, Timestamp.from(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).toInstant(ZoneOffset.ofHours(6))));
+            } else {
+                pst.setTimestamp(2, null);
+            }
             pst.setString(3, thread.getForum());
             pst.setString(4, thread.getMessage());
             pst.setString(5, thread.getSlug());
