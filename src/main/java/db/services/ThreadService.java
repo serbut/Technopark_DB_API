@@ -118,7 +118,7 @@ public final class ThreadService {
         String sinceCreated = " ";
         if (sinceString != null) {
             sinceCreated = "WHERE created " + createdSign + " ? ";
-            params.add(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME)));
+            params.add(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND LOWER(f.slug) = LOWER(?))" +
@@ -148,7 +148,7 @@ public final class ThreadService {
             final PreparedStatement pst = con.prepareStatement(query);
             pst.setString(1, thread.getAuthor());
             if (thread.getCreated() != null) {
-                pst.setTimestamp(2, Timestamp.from(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).toInstant(ZoneOffset.ofHours(6))));
+                pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).minusHours(3)));
             } else {
                 pst.setTimestamp(2, null);
             }
