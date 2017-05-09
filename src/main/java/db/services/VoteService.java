@@ -6,16 +6,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Created by sergeybutorin on 09.03.17.
  */
 
 @Service
-public final class VoteService {
+@Transactional
+public class VoteService {
     private final JdbcTemplate template;
 
-    private VoteService(JdbcTemplate template) {
+    public VoteService(JdbcTemplate template) {
         this.template = template;
     }
 
@@ -45,12 +47,14 @@ public final class VoteService {
     }
 
     public int addVote(Vote vote) {
-        try {
+        final int count = template.queryForObject("SELECT COUNT(*) FROM vote WHERE user_id IN (SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)) AND thread_id = ?",
+                Mappers.countMapper, vote.getAuthor(), vote.getThreadId());
+        if (count == 0) {
             final String query = "INSERT INTO vote (user_id, voice, thread_id) VALUES (" +
                     "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, ?)";
             template.update(query, vote.getAuthor(), vote.getVoice(), vote.getThreadId());
             LOGGER.info("Vote added");
-        } catch (DuplicateKeyException e) {
+        } else {
             final String query = "UPDATE vote SET voice = ? " +
                     "WHERE user_id IN (SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)) AND thread_id = ?";
             template.update(query, vote.getVoice(), vote.getAuthor(), vote.getThreadId());

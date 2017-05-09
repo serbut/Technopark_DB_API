@@ -23,8 +23,12 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/api/user")
 class UserController {
-    @Autowired
     private UserService userService;
+
+    @Autowired
+    UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
 

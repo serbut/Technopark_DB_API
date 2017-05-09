@@ -26,14 +26,16 @@ import java.util.List;
 class ForumController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ForumController.class.getName());
 
-    @Autowired
     private ForumService forumService;
-
-    @Autowired
     private UserService userService;
+    private ThreadService threadService;
 
     @Autowired
-    private ThreadService threadService;
+    ForumController(ForumService forumService, UserService userService, ThreadService threadService) {
+        this.forumService = forumService;
+        this.userService = userService;
+        this.threadService = threadService;
+    }
 
     @RequestMapping(path = "/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createForum(@RequestBody Forum body) {

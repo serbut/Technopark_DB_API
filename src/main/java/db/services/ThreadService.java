@@ -7,6 +7,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -18,10 +19,11 @@ import java.util.List;
  * Created by sergeybutorin on 27.02.17.
  */
 @Service
-public final class ThreadService {
+@Transactional
+public class ThreadService {
     private final JdbcTemplate template;
 
-    private ThreadService(JdbcTemplate template) {
+    public ThreadService(JdbcTemplate template) {
         this.template = template;
     }
 
@@ -132,32 +134,5 @@ public final class ThreadService {
 
     public int getCount() {
         return template.queryForObject("SELECT COUNT(*) FROM thread", Mappers.countMapper);
-    }
-
-    private static class ThreadCreatePst implements PreparedStatementCreator {
-        private final Thread thread;
-
-        ThreadCreatePst(Thread thread) {
-            this.thread = thread;
-        }
-
-        @Override
-        public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
-                    "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
-                    "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?)";
-            final PreparedStatement pst = con.prepareStatement(query);
-            pst.setString(1, thread.getAuthor());
-            if (thread.getCreated() != null) {
-                pst.setTimestamp(2, Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).minusHours(3)));
-            } else {
-                pst.setTimestamp(2, null);
-            }
-            pst.setString(3, thread.getForum());
-            pst.setString(4, thread.getMessage());
-            pst.setString(5, thread.getSlug());
-            pst.setString(6, thread.getTitle());
-            return pst;
-        }
     }
 }

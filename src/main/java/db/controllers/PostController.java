@@ -1,6 +1,7 @@
 package db.controllers;
 
 import db.models.Post;
+import db.models.Thread;
 import db.services.ForumService;
 import db.services.PostService;
 import db.services.ThreadService;
@@ -27,17 +28,18 @@ class PostController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PostController.class.getName());
 
-    @Autowired
     private ThreadService threadService;
-
-    @Autowired
     private UserService userService;
-
-    @Autowired
     private ForumService forumService;
+    private PostService postService;
 
     @Autowired
-    private PostService postService;
+    PostController(UserService userService, ForumService forumService, ThreadService threadService, PostService postService) {
+        this. userService = userService;
+        this.forumService = forumService;
+        this.threadService = threadService;
+        this.postService = postService;
+    }
 
     @RequestMapping(path = "/{id}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getPostDetails(@PathVariable(value="id") int postId,

@@ -7,6 +7,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +18,10 @@ import java.util.List;
  */
 
 @Service
-public final class UserService {
+@Transactional
+public class UserService {
     private final JdbcTemplate template;
-    private UserService(JdbcTemplate template) {
+    public UserService(JdbcTemplate template) {
         this.template = template;
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());

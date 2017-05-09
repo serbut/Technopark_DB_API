@@ -16,16 +16,18 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
  * Created by sergey on 05.03.17.
  */
 @Service
-public final class PostService {
+@Transactional
+public class PostService {
     private final JdbcTemplate template;
 
-    private PostService(JdbcTemplate template) {
+    public PostService(JdbcTemplate template) {
         this.template = template;
     }
 
@@ -166,31 +168,5 @@ public final class PostService {
 
     public int getCount() {
         return template.queryForObject("SELECT COUNT(*) FROM post", Mappers.countMapper);
-    }
-
-    private static class PostCreatePst implements PreparedStatementCreator {
-        private final Post post;
-
-        PostCreatePst(Post post) {
-            this.post = post;
-        }
-
-        @Override
-        public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO post (id, user_id, created, forum_id, message, isEdited, parent_id, thread_id) VALUES (?, " +
-                    "(SELECT id FROM \"user\" WHERE nickname = ?), ?, " +
-                    "(SELECT f.id FROM forum f JOIN thread t ON (t.forum_id = f.id AND t.id = ?)), " +
-                    "?, ?, ?, ?)";
-            final PreparedStatement pst = con.prepareStatement(query);
-            pst.setInt(1, post.getId());
-            pst.setString(2, post.getAuthor());
-            pst.setTimestamp(3, Timestamp.valueOf(LocalDateTime.parse(post.getCreated(), DateTimeFormatter.ISO_DATE_TIME)));
-            pst.setInt(4, post.getThreadId());
-            pst.setString(5, post.getMessage());
-            pst.setBoolean(6, post.getIsEdited());
-            pst.setInt(7, post.getParentId());
-            pst.setInt(8, post.getThreadId());
-            return pst;
-        }
     }
 }

@@ -13,20 +13,20 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 class ServiceController {
-    @Autowired
-    private PostService postService;
-
-    @Autowired
-    private ThreadService threadService;
-
-    @Autowired
     private UserService userService;
-
-    @Autowired
     private ForumService forumService;
+    private ThreadService threadService;
+    private PostService postService;
+    private VoteService voteService;
 
     @Autowired
-    private VoteService voteService;
+    ServiceController(UserService userService, ForumService forumService, ThreadService threadService, PostService postService, VoteService voteService) {
+        this.userService = userService;
+        this.forumService = forumService;
+        this.threadService = threadService;
+        this.postService = postService;
+        this.voteService = voteService;
+    }
 
     @RequestMapping(path = "/api/service/clear", method = RequestMethod.POST)
     public void clearAllTables() {

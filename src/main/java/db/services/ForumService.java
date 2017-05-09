@@ -7,6 +7,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,9 +17,10 @@ import java.sql.SQLException;
  * Created by sergey on 26.02.17.
  */
 @Service
-public final class ForumService {
+@Transactional
+public class ForumService {
     private final JdbcTemplate template;
-    private ForumService(JdbcTemplate template) {
+    public ForumService(JdbcTemplate template) {
         this.template = template;
     }
     private static final Logger LOGGER = LoggerFactory.getLogger(ForumService.class.getName());

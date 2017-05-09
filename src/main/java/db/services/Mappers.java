@@ -17,8 +17,6 @@ class Mappers {
 
     static final RowMapper<Integer> idMapper = (rs, rowNum) -> rs.getInt("id");
 
-    static final RowMapper<Integer> currentIdMapper = (rs, rowNum) -> rs.getInt("currval");
-
     static final RowMapper<Integer> nextIdMapper = (rs, rowNum) -> rs.getInt("nextval");
 
     static final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count");

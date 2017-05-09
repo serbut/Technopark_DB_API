@@ -25,17 +25,18 @@ import java.util.List;
 class ThreadController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThreadController.class.getName());
 
-    @Autowired
+    private UserService userService;
     private ThreadService threadService;
-
-    @Autowired
+    private PostService postService;
     private VoteService voteService;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
-    private PostService postService;
+    ThreadController(UserService userService, ThreadService threadService, PostService postService, VoteService voteService) {
+        this.userService = userService;
+        this.threadService = threadService;
+        this.postService = postService;
+        this.voteService = voteService;
+    }
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getSingleThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId) {
