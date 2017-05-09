@@ -4,8 +4,6 @@ import db.models.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import db.services.UserService;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -43,7 +41,9 @@ class UserController {
             String dupEmail = null;
             try {
                 user = userService.getUserByNickname(nickname);
-                duplicates.add(user);
+                if (user != null) {
+                    duplicates.add(user);
+                }
                 dupEmail = user.getEmail();
             }
             catch (NullPointerException e) {
@@ -51,15 +51,17 @@ class UserController {
             }
             if (dupEmail != null && !(email.toLowerCase()).equals(dupEmail.toLowerCase()) || dupEmail == null) { //если email найденного пользователя совпадает, то нового искать не надо
                 try {
-                    duplicates.add(userService.getUserByEmail(email));
+                    user = userService.getUserByEmail(email);
+                    if (user != null) {
+                        duplicates.add(user);
+                    }
                 } catch (NullPointerException e) {
                     LOGGER.info("There is no user with such email");
                 }
             }
-
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(userListResponse(duplicates));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(duplicates);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(userDataResponse(user));
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @RequestMapping(path = "/{nickname}/profile", method = RequestMethod.GET, produces = "application/json")
@@ -68,7 +70,7 @@ class UserController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(userDataResponse(user));
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
     @RequestMapping(path = "/{nickname}/profile", method = RequestMethod.POST, produces = "application/json", consumes = "application/json")
@@ -88,27 +90,6 @@ class UserController {
             LOGGER.info("Error updating user - user doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(userDataResponse(user));
-    }
-
-    static JSONObject userDataResponse(User user) {
-        final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("about", user.getAbout());
-        formDetailsJson.put("email", user.getEmail());
-        formDetailsJson.put("fullname", user.getFullname());
-        formDetailsJson.put("nickname", user.getNickname());
-        return formDetailsJson;
-    }
-
-    static String userListResponse(List<User> users) {
-        final JSONArray jsonArray = new JSONArray();
-
-        for(User u : users) {
-            if (u == null) {
-                continue;
-            }
-            jsonArray.add(userDataResponse(u));
-        }
-        return jsonArray.toString();
+        return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 }

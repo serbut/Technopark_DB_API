@@ -5,7 +5,6 @@ import db.models.Thread;
 import db.services.ForumService;
 import db.services.ThreadService;
 import db.services.UserService;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,12 +51,12 @@ class ForumController {
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error creating forum - forum already exists!");
             forum = forumService.getForumBySlug(slug);
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(forumDataResponse(forum));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(forum);
         } catch (DataAccessException e) {
             LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(forumDataResponse(forum));
+        return ResponseEntity.status(HttpStatus.CREATED).body(forum);
     }
 
     @RequestMapping(path = "/{slug}/details", method = RequestMethod.GET, produces = "application/json")
@@ -66,7 +65,7 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(forumDataResponse(forum));
+        return ResponseEntity.status(HttpStatus.OK).body(forum);
     }
 
     @RequestMapping(path = "/{slug}/users", method = RequestMethod.GET, produces = "application/json")
@@ -78,7 +77,7 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(UserController.userListResponse(userService.getUsersForum(slug, limit, since, desc)));
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsersForum(slug, limit, since, desc));
     }
 
     @RequestMapping(path = "/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -103,13 +102,13 @@ class ForumController {
             catch (NullPointerException ex) {
                 LOGGER.info("There is no thread with such slug");
             }
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ThreadController.threadDataResponse(thread));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(thread);
         }
         catch (DataAccessException e) {
             LOGGER.info("Error creating thread - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(ThreadController.threadDataResponse(thread));
+        return ResponseEntity.status(HttpStatus.CREATED).body(thread);
     }
 
     @RequestMapping(path = "/{forum_slug}/threads", method = RequestMethod.GET, produces = "application/json")
@@ -123,16 +122,6 @@ class ForumController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadController.threadListResponse(threads).toJSONString());
-    }
-
-    static JSONObject forumDataResponse(Forum forum) {
-        final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("slug", forum.getSlug());
-        formDetailsJson.put("title", forum.getTitle());
-        formDetailsJson.put("user", forum.getUser());
-        formDetailsJson.put("posts", forum.getPosts());
-        formDetailsJson.put("threads", forum.getThreads());
-        return formDetailsJson;
+        return ResponseEntity.status(HttpStatus.OK).body(threads);
     }
 }

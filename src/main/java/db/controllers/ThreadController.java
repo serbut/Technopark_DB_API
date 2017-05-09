@@ -3,9 +3,8 @@ package db.controllers;
 import db.models.Post;
 import db.models.Thread;
 import db.models.Vote;
+import db.responses.PostSortResponse;
 import db.services.*;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,7 @@ class ThreadController {
             LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
+        return ResponseEntity.ok(thread);
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
@@ -77,7 +76,7 @@ class ThreadController {
             LOGGER.info("Error updating thread - thread doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(threadDataResponse(thread));
+        return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -108,7 +107,7 @@ class ThreadController {
         if (createdPosts == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(PostController.postListResponse(createdPosts).toJSONString());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPosts);
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
@@ -151,7 +150,7 @@ class ThreadController {
                 posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
                 break;
         }
-        return ResponseEntity.ok(PostController.sortResponse(PostController.postListResponse(posts), String.valueOf(markerInt)));
+        return ResponseEntity.ok(new PostSortResponse(posts, String.valueOf(markerInt)));
     }
 
     @RequestMapping(path = "/{thread}/vote", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
@@ -175,31 +174,6 @@ class ThreadController {
         }
         final byte voice = body.getVoice();
         thread.setVotes(voteService.addVote(new Vote(author, thread.getId(), voice)));
-        return ResponseEntity.status(HttpStatus.OK).body(ThreadController.threadDataResponse(thread));
-    }
-
-    static JSONObject threadDataResponse(Thread thread) {
-        final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("author", thread.getAuthor());
-        formDetailsJson.put("created", thread.getCreated());
-        formDetailsJson.put("forum", thread.getForum());
-        formDetailsJson.put("id", thread.getId());
-        formDetailsJson.put("message", thread.getMessage());
-        formDetailsJson.put("slug", thread.getSlug());
-        formDetailsJson.put("title", thread.getTitle());
-        formDetailsJson.put("votes", thread.getVotes());
-        return formDetailsJson;
-    }
-
-    static JSONArray threadListResponse(List<Thread> threads) {
-        final JSONArray jsonArray = new JSONArray();
-
-        for (Thread t : threads) {
-            if (t == null) {
-                continue;
-            }
-            jsonArray.add(threadDataResponse(t));
-        }
-        return jsonArray;
+        return ResponseEntity.status(HttpStatus.OK).body(thread);
     }
 }

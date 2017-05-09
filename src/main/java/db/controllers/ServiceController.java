@@ -1,7 +1,7 @@
 package db.controllers;
 
+import db.responses.StatusResponse;
 import db.services.*;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,15 +52,6 @@ class ServiceController {
 
     @RequestMapping(path = "/api/service/status", method = RequestMethod.GET)
     public ResponseEntity getStatus() {
-        return ResponseEntity.ok(statusResponse(forumService.getCount(), postService.getCount(), threadService.getCount(), userService.getCount()));
-    }
-
-    private static JSONObject statusResponse(int forum, int post, int thread, int user) {
-        final JSONObject formDetailsJson = new JSONObject();
-        formDetailsJson.put("forum", forum);
-        formDetailsJson.put("post", post);
-        formDetailsJson.put("thread", thread);
-        formDetailsJson.put("user", user);
-        return formDetailsJson;
+        return ResponseEntity.ok(new StatusResponse(userService.getCount(), forumService.getCount(), threadService.getCount(), postService.getCount()));
     }
 }

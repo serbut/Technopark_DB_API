@@ -1,12 +1,12 @@
-DROP TABLE IF EXISTS vote CASCADE;
-DROP TABLE IF EXISTS post CASCADE;
-DROP INDEX IF EXISTS unique_slug_thread;
-DROP TABLE IF EXISTS thread CASCADE;
-DROP INDEX IF EXISTS unique_slug_forum;
-DROP TABLE IF EXISTS forum CASCADE;
-DROP INDEX IF EXISTS unique_email;
-DROP INDEX IF EXISTS unique_nickname;
-DROP TABLE IF EXISTS "user" CASCADE;
+-- DROP TABLE IF EXISTS vote CASCADE;
+-- DROP TABLE IF EXISTS post CASCADE;
+-- DROP INDEX IF EXISTS unique_slug_thread;
+-- DROP TABLE IF EXISTS thread CASCADE;
+-- DROP INDEX IF EXISTS unique_slug_forum;
+-- DROP TABLE IF EXISTS forum CASCADE;
+-- DROP INDEX IF EXISTS unique_email;
+-- DROP INDEX IF EXISTS unique_nickname;
+-- DROP TABLE IF EXISTS "user" CASCADE;
 
 CREATE TABLE IF NOT EXISTS "user" (
                 id SERIAL NOT NULL PRIMARY KEY,
@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS "user" (
                 fullname VARCHAR(100),
                 email VARCHAR(50) NOT NULL);
 
-CREATE UNIQUE INDEX unique_email ON "user" (LOWER(email));
-CREATE UNIQUE INDEX unique_nickname ON "user" (LOWER(nickname));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_email ON "user" (LOWER(email));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_nickname ON "user" (LOWER(nickname));
 
 CREATE TABLE IF NOT EXISTS forum (
                 id SERIAL NOT NULL PRIMARY KEY,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS forum (
                 threads INT NOT NULL DEFAULT 0,
                 user_id INT REFERENCES "user"(id) NOT NULL);
 
-CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_forum ON forum (LOWER(slug));
 
 CREATE TABLE IF NOT EXISTS thread (
                 id SERIAL NOT NULL PRIMARY KEY,
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS thread (
                 title VARCHAR(100) NOT NULL,
                 votes INT NOT NULL DEFAULT 0);
 
-CREATE UNIQUE INDEX unique_slug_thread ON thread (LOWER(slug));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_thread ON thread (LOWER(slug));
 
 CREATE TABLE IF NOT EXISTS post (
                 id SERIAL NOT NULL PRIMARY KEY,
