@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  */
 
 @Service
-public class VoteService {
+public final class VoteService {
     private final JdbcTemplate template;
 
     private VoteService(JdbcTemplate template) {
@@ -44,7 +44,7 @@ public class VoteService {
         LOGGER.info("Table vote was created!");
     }
 
-    public void addVote(Vote vote) {
+    public int addVote(Vote vote) {
         try {
             final String query = "INSERT INTO vote (user_id, voice, thread_id) VALUES (" +
                     "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, ?)";
@@ -56,10 +56,7 @@ public class VoteService {
             template.update(query, vote.getVoice(), vote.getAuthor(), vote.getThreadId());
             LOGGER.info("Vote updated");
         }
-    }
-
-    public int getVotesForThread(int id) {
-        return template.queryForObject("SELECT SUM(voice) as votes FROM vote " +
-                "WHERE (thread_id) = ?", Mappers.voteMapper, id);
+        return template.queryForObject("UPDATE thread SET votes = (SELECT SUM(voice) as votes FROM vote " +
+                "WHERE (thread_id) = ?) WHERE id = ? RETURNING votes", Mappers.voteMapper, vote.getThreadId(), vote.getThreadId());
     }
 }

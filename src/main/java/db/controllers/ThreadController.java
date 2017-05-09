@@ -14,8 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,11 +38,11 @@ class ThreadController {
     private PostService postService;
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getSingleThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId) {
+    public ResponseEntity getSingleThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId) {
         Thread thread;
         try {
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         if (thread == null) {
@@ -55,11 +53,11 @@ class ThreadController {
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
-    public ResponseEntity updateThread(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
+    public ResponseEntity updateThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
         Thread thread;
         try {
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         if (thread == null) {
@@ -70,8 +68,7 @@ class ThreadController {
         final String title = body.getTitle();
         try {
             thread = threadService.update(thread.getSlug(), message, title);
-        }
-        catch (DuplicateKeyException e) {
+        } catch (DuplicateKeyException e) {
             LOGGER.info("Error updating thread - duplicate values exists!");
             return ResponseEntity.status(HttpStatus.CONFLICT).body("");
         }
@@ -83,50 +80,38 @@ class ThreadController {
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Object> createPost(@PathVariable(value="thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
+    public ResponseEntity<Object> createPost(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
         Thread thread;
         try { // этот блок вынести
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         if (thread == null) {
             LOGGER.info("Error creating posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        LocalDateTime currentTime = LocalDateTime.now();
-        List<Post> posts = new ArrayList<>();
-        for(Post postBody: body) {
-            String author = postBody.getAuthor();
-            String created = postBody.getCreated();
-            final String message = postBody.getMessage();
-            final boolean isEdited = postBody.getIsEdited();
-            final int parentId = postBody.getParentId();
+        for (Post post : body) {
+            post.setThreadId(thread.getId());
+            final int parentId = post.getParentId();
             if (parentId != 0) {
-                Post parentPost = postService.getPostById(parentId);
+                final Post parentPost = postService.getPostById(parentId);
                 if (parentPost == null || parentPost.getThreadId() != thread.getId()) {
                     LOGGER.info("Error creating post - parent is not in this thread!");
                     return ResponseEntity.status(HttpStatus.CONFLICT).body("");
                 }
             }
-            try { // этот блок вынести
-                author = userService.getUserByNickname(author).getNickname();//убрать это
-            } catch (NullPointerException e) {
-                LOGGER.info("Error creating post - user not found!");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
-            }
-            if (created == null) {
-                created = currentTime.toString() + "+03:00";
-            }
-            final Post post = postService.create(new Post(author, created, message, isEdited, parentId, thread.getId()));
             post.setForum(thread.getForum());
-            posts.add(post);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(PostController.postListResponse(posts).toJSONString());
+        final List<Post> createdPosts = postService.create(body);
+        if (createdPosts == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(PostController.postListResponse(createdPosts).toJSONString());
     }
 
     @RequestMapping(path = "/{thread_slug_or_id}/posts", method = RequestMethod.GET, produces = "application/json")
-    public ResponseEntity getPosts(@PathVariable(value="thread_slug_or_id") String threadSlugOrId,
+    public ResponseEntity getPosts(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId,
                                    @RequestParam(name = "limit", required = false, defaultValue = "0") int limit,
                                    @RequestParam(name = "marker", required = false, defaultValue = "0") String marker,
                                    @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
@@ -134,7 +119,7 @@ class ThreadController {
         Thread thread;
         try { // этот блок вынести
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         if (thread == null) {
@@ -143,22 +128,23 @@ class ThreadController {
         }
         int markerInt = Integer.parseInt(marker);
         List<Post> posts = null;
+        //noinspection SwitchStatementWithoutDefaultBranch
         switch (sort) {
             case "flat":
                 posts = postService.getPostsFlat(thread.getSlug(), limit, markerInt, desc);
-                if(!posts.isEmpty()){
+                if (!posts.isEmpty()) {
                     markerInt += posts.size();
                 }
                 break;
             case "tree":
                 posts = postService.getPostsTree(thread.getSlug(), limit, markerInt, desc);
-                if(!posts.isEmpty()){
+                if (!posts.isEmpty()) {
                     markerInt += posts.size();
                 }
                 break;
             case "parent_tree":
-                List<Integer> parentIds = postService.getParents(thread.getSlug(), limit, markerInt, desc);
-                if(!parentIds.isEmpty()){
+                final List<Integer> parentIds = postService.getParents(thread.getSlug(), limit, markerInt, desc);
+                if (!parentIds.isEmpty()) {
                     markerInt += parentIds.size();
                 }
                 posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
@@ -168,11 +154,11 @@ class ThreadController {
     }
 
     @RequestMapping(path = "/{thread}/vote", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public ResponseEntity addVote(@PathVariable(value="thread") String threadSlugOrId, @RequestBody Vote body) {
+    public ResponseEntity addVote(@PathVariable(value = "thread") String threadSlugOrId, @RequestBody Vote body) {
         Thread thread;
         try { // этот блок вынести
             thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             thread = threadService.getThreadBySlug(threadSlugOrId);
         }
         if (thread == null) {
@@ -186,9 +172,8 @@ class ThreadController {
             LOGGER.info("Error creating vote - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        byte voice = body.getVoice();
-        voteService.addVote(new Vote(author, thread.getId(), voice));
-        thread.setVotes(voteService.getVotesForThread(thread.getId())); // от этого лучше бы избавиться
+        final byte voice = body.getVoice();
+        thread.setVotes(voteService.addVote(new Vote(author, thread.getId(), voice)));
         return ResponseEntity.status(HttpStatus.OK).body(ThreadController.threadDataResponse(thread));
     }
 
@@ -208,7 +193,7 @@ class ThreadController {
     static JSONArray threadListResponse(List<Thread> threads) {
         final JSONArray jsonArray = new JSONArray();
 
-        for(Thread t : threads) {
+        for (Thread t : threads) {
             if (t == null) {
                 continue;
             }

@@ -41,7 +41,7 @@ public final class ForumService {
         final String createTable = "CREATE TABLE IF NOT EXISTS  forum (" +
                 "id SERIAL NOT NULL PRIMARY KEY," +
                 "slug VARCHAR(100)," +
-                "title VARCHAR(100) NOT NULL ," +
+                "title VARCHAR(100) NOT NULL," +
                 "user_id INT REFERENCES \"user\"(id) NOT NULL)";
         template.execute(createTable);
         final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug))";
@@ -64,6 +64,7 @@ public final class ForumService {
         ForumPst(Forum forum) {
             this.forum = forum;
         }
+        @Override
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
             final String query = "INSERT INTO forum (slug, title, user_id) VALUES (?, ?, (" +
                     "SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)))";
@@ -77,12 +78,7 @@ public final class ForumService {
 
     public Forum getForumBySlug(String slug) {
         try {
-            return template.queryForObject("WITH forum AS (SELECT f.id AS id, f.slug AS slug, f.title AS title, nickname, p.id AS pid, t.id AS tid FROM forum f " + //переписать эту дичь
-                            "JOIN \"user\" u ON (u.id = f.user_id) LEFT JOIN post p ON (p.forum_id = f.id) " +                                                          //но работает!
-                            "LEFT JOIN thread t ON (t.forum_id = f.id) WHERE LOWER (f.slug) = LOWER (?))" +
-                            "SELECT DISTINCT f.id, f.slug, f.title, f.nickname, p.count AS posts, t.count AS threads FROM forum f " +
-                            "CROSS JOIN (SELECT COUNT (pid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.tid) AS p " +
-                            "CROSS JOIN (SELECT COUNT (tid) AS \"count\" FROM forum f GROUP BY f.id, f.slug, f.title, f.nickname, f.pid) AS t ", Mappers.forumMapper, slug);
+            return template.queryForObject("SELECT * FROM forum f JOIN \"user\" u ON (u.id = f.user_id) WHERE LOWER (f.slug) = LOWER (?)", Mappers.forumMapper, slug);
         }
         catch (EmptyResultDataAccessException e) {
             return null;

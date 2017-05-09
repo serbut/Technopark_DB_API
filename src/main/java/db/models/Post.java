@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Created by sergey on 19.02.17.
  */
 public class Post {
-    private long id;
+    private int id;
     @JsonProperty("author")
     private String author;
     @JsonProperty("created")
@@ -27,10 +27,11 @@ public class Post {
     private Post() {
     }
 
-    public Post(String author, String created, String message, boolean isEdited, int parentId, int threadId) {
+    public Post(String author, String created, String forum, String message, boolean isEdited, int parentId, int threadId) {
         this.author = author;
         this.created = created;
         this.isEdited = isEdited;
+        this.forum = forum;
         this.message = message;
         this.parentId = parentId;
         this.threadId = threadId;
@@ -47,7 +48,7 @@ public class Post {
         this.threadId = threadId;
     }
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
@@ -83,7 +84,15 @@ public class Post {
         this.forum = forum;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
+    }
+
+    public void setThreadId(int threadId) {
+        this.threadId = threadId;
     }
 }

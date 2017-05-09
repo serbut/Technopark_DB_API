@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 /**
  * Created by sergey on 15.03.17.
@@ -17,6 +18,8 @@ class Mappers {
     static final RowMapper<Integer> idMapper = (rs, rowNum) -> rs.getInt("id");
 
     static final RowMapper<Integer> currentIdMapper = (rs, rowNum) -> rs.getInt("currval");
+
+    static final RowMapper<Integer> nextIdMapper = (rs, rowNum) -> rs.getInt("nextval");
 
     static final RowMapper<Integer> countMapper = (rs, rowNum) -> rs.getInt("count");
 
@@ -53,7 +56,8 @@ class Mappers {
     };
 
     static final RowMapper<Post> postMapper = (rs, rowNum) -> {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'+03:00'");
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         final int id = rs.getInt("id");
         final String author = rs.getString("nickname");
         final Timestamp created = rs.getTimestamp("created");

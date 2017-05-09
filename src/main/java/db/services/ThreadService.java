@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +55,15 @@ public final class ThreadService {
     }
 
     public Thread create(Thread thread) {
-        template.update(new ThreadCreatePst(thread));
-        thread.setId(template.queryForObject("SELECT currval(pg_get_serial_sequence('thread', 'id'))", Mappers.currentIdMapper)); //возможно от этого можно избавиться
+        Timestamp time = null;
+        if (thread.getCreated() != null) {
+            time = Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).minusHours(3));
+        }
+        thread.setId(template.queryForObject("INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
+                "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
+                        "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(), time,
+                thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
+        template.update("UPDATE forum SET threads = threads + 1 WHERE slug = ?", thread.getForum());
         LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
         return thread;
     }
@@ -77,12 +83,10 @@ public final class ThreadService {
 
     public Thread getThreadBySlug(String slug) {
         try {
-            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                     "JOIN forum f ON (t.forum_id=f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
-                    "LEFT JOIN vote v ON (v.thread_id = t.id)" +
-                    "WHERE LOWER (t.slug) = ?" +
-                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", Mappers.threadMapper, slug.toLowerCase());
+                    "WHERE LOWER (t.slug) = ?", Mappers.threadMapper, slug.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -91,12 +95,10 @@ public final class ThreadService {
 
     public Thread getThreadById(int id) {
         try {
-            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
+            return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                     "JOIN forum f ON (t.forum_id = f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
-                    "LEFT JOIN vote v ON (v.thread_id = t.id)" +
-                    "WHERE (t.id) = ?" +
-                    "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title", Mappers.threadMapper, id);
+                    "WHERE (t.id) = ?", Mappers.threadMapper, id);
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -120,12 +122,10 @@ public final class ThreadService {
             sinceCreated = "WHERE created " + createdSign + " ? ";
             params.add(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
         }
-        final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, SUM (v.voice) as votes FROM thread t " +
+        final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND LOWER(f.slug) = LOWER(?))" +
-                "LEFT JOIN vote v ON (v.thread_id = t.id) " +
                 "JOIN \"user\" u ON (u.id = t.user_id) " + sinceCreated +
-                "GROUP BY t.id, nickname, created, f.slug, message, t.slug, t.title " +
-                "ORDER BY created " + sort + " LIMIT ?";
+                " ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);
         return template.query(query, Mappers.threadMapper, params.toArray());
     }
@@ -141,6 +141,7 @@ public final class ThreadService {
             this.thread = thread;
         }
 
+        @Override
         public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
             final String query = "INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
                     "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +

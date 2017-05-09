@@ -15,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -42,7 +40,7 @@ class ForumController {
         final String slug = body.getSlug();
         final String title = body.getTitle();
         String userNickname = body.getUser();
-        Forum forum = null;
+        Forum forum;
         try {
             userNickname = userService.getUserByNickname(userNickname).getNickname();//убрать это
             forum = forumService.create(new Forum(slug, title, userNickname));
