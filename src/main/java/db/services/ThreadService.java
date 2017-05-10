@@ -57,12 +57,14 @@ public class ThreadService {
     }
 
     public Thread create(Thread thread) {
-        Timestamp time = null;
+        Timestamp time;
         if (thread.getCreated() != null) {
             time = Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).minusHours(3));
+        } else {
+            time = new Timestamp(System.currentTimeMillis());
         }
         thread.setId(template.queryForObject("INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
-                "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
+                        "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
                         "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(), time,
                 thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         template.update("UPDATE forum SET threads = threads + 1 WHERE slug = ?", thread.getForum());
@@ -89,8 +91,7 @@ public class ThreadService {
                     "JOIN forum f ON (t.forum_id=f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
                     "WHERE LOWER (t.slug) = ?", Mappers.threadMapper, slug.toLowerCase());
-        }
-        catch (EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
@@ -101,8 +102,7 @@ public class ThreadService {
                     "JOIN forum f ON (t.forum_id = f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
                     "WHERE (t.id) = ?", Mappers.threadMapper, id);
-        }
-        catch (EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }

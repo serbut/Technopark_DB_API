@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_forum ON forum (LOWER(slug));
 CREATE TABLE IF NOT EXISTS thread (
                 id SERIAL NOT NULL PRIMARY KEY,
                 user_id INT REFERENCES "user"(id) NOT NULL,
-                created TIMESTAMP DEFAULT NOW(),
+                created TIMESTAMP NOT NULL,
                 forum_id INT REFERENCES forum(id) NOT NULL,
                 message TEXT,
                 slug VARCHAR(100),
@@ -43,7 +43,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_thread ON thread (LOWER(slug));
 CREATE TABLE IF NOT EXISTS post (
                 id SERIAL NOT NULL PRIMARY KEY,
                 user_id INT REFERENCES "user"(id) NOT NULL,
-                created TIMESTAMP,
+                created TIMESTAMP NOT NULL,
                 forum_id INT REFERENCES forum(id) NOT NULL,
                 isEdited BOOLEAN DEFAULT FALSE,
                 message TEXT,

@@ -52,30 +52,14 @@ public class ForumService {
     }
 
     public Forum create(Forum forum) {
-        template.update(new ForumPst(forum));
+        template.update("INSERT INTO forum (slug, title, user_id) VALUES (?, ?," +
+                "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)))", forum.getSlug(), forum.getTitle(), forum.getUser());
         LOGGER.info("Forum with slug \"{}\" created", forum.getSlug());
         return forum;
     }
 
     public int getCount() {
         return template.queryForObject("SELECT COUNT(*) FROM forum", Mappers.countMapper);
-    }
-
-    private static class ForumPst implements PreparedStatementCreator {
-        private final Forum forum;
-        ForumPst(Forum forum) {
-            this.forum = forum;
-        }
-        @Override
-        public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-            final String query = "INSERT INTO forum (slug, title, user_id) VALUES (?, ?, (" +
-                    "SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)))";
-            final PreparedStatement pst = con.prepareStatement(query);
-            pst.setString(1, forum.getSlug());
-            pst.setString(2, forum.getTitle());
-            pst.setString(3, forum.getUser());
-            return pst;
-        }
     }
 
     public Forum getForumBySlug(String slug) {
