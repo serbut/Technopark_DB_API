@@ -17,7 +17,6 @@ import java.util.List;
  * Created by sergeybutorin on 20.02.17.
  */
 
-@SuppressWarnings("unchecked")
 @RestController
 @RequestMapping(path = "/api/user")
 class UserController {

@@ -19,7 +19,6 @@ import java.util.List;
 /**
  * Created by sergey on 26.02.17.
  */
-@SuppressWarnings("unchecked")
 @RestController
 @RequestMapping(path = "/api/forum")
 class ForumController {
@@ -77,7 +76,7 @@ class ForumController {
         if (forum == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsersForum(slug, limit, since, desc));
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsersForum(forum.getId(), limit, since, desc));
     }
 
     @RequestMapping(path = "/{forum_slug}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")

@@ -18,7 +18,6 @@ import java.util.List;
 /**
  * Created by sergeybutorin on 27.02.17.
  */
-@SuppressWarnings("unchecked")
 @RestController
 @RequestMapping(path = "/api/thread")
 class ThreadController {
@@ -131,23 +130,23 @@ class ThreadController {
         //noinspection SwitchStatementWithoutDefaultBranch
         switch (sort) {
             case "flat":
-                posts = postService.getPostsFlat(thread.getSlug(), limit, markerInt, desc);
+                posts = postService.getPostsFlat(thread.getId(), limit, markerInt, desc);
                 if (!posts.isEmpty()) {
                     markerInt += posts.size();
                 }
                 break;
             case "tree":
-                posts = postService.getPostsTree(thread.getSlug(), limit, markerInt, desc);
+                posts = postService.getPostsTree(thread.getId(), limit, markerInt, desc);
                 if (!posts.isEmpty()) {
                     markerInt += posts.size();
                 }
                 break;
             case "parent_tree":
-                final List<Integer> parentIds = postService.getParents(thread.getSlug(), limit, markerInt, desc);
+                final List<Integer> parentIds = postService.getParents(thread.getId(), limit, markerInt, desc);
                 if (!parentIds.isEmpty()) {
                     markerInt += parentIds.size();
                 }
-                posts = postService.getPostsParentsTree(thread.getSlug(), desc, parentIds);
+                posts = postService.getPostsParentsTree(thread.getId(), desc, parentIds);
                 break;
         }
         return ResponseEntity.ok(new PostSortResponse(posts, String.valueOf(markerInt)));

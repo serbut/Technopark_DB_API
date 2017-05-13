@@ -1,6 +1,5 @@
 package db.responses;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import db.models.Forum;
 import db.models.Post;
 import db.models.Thread;

@@ -32,31 +32,6 @@ public class UserService {
         LOGGER.info("Table user was cleared");
     }
 
-    public void deleteTable() {
-        final String dropTable = "DROP TABLE IF EXISTS \"user\" CASCADE";
-        template.execute(dropTable);
-        final String dropUniqueEmail = "DROP INDEX IF EXISTS unique_email";
-        template.execute(dropUniqueEmail);
-        final String dropUniqueNickname = "DROP INDEX IF EXISTS unique_nickname";
-        template.execute(dropUniqueNickname);
-        LOGGER.info("Table user dropped");
-    }
-
-    public void createTable() {
-        final String createTable = "CREATE TABLE IF NOT EXISTS  \"user\" (" +
-                "id SERIAL NOT NULL PRIMARY KEY," +
-                "about TEXT," +
-                "nickname VARCHAR(30) NOT NULL UNIQUE," +
-                "fullname VARCHAR(100)," +
-                "email VARCHAR(50) NOT NULL UNIQUE)";
-        template.execute(createTable);
-        final String createUniqueEmail = "CREATE UNIQUE INDEX unique_email ON \"user\" (LOWER(email))";
-        template.execute(createUniqueEmail);
-        final String createUniqueNickname = "CREATE UNIQUE INDEX unique_nickname ON \"user\" (LOWER(nickname))";
-        template.execute(createUniqueNickname);
-        LOGGER.info("Table user created!");
-    }
-
     public User create(String about, String email, String fullname, String nickname) {
         final User user = new User(about, email, fullname, nickname);
         try {
@@ -76,7 +51,7 @@ public class UserService {
                 "about = COALESCE (?, about), " +
                 "email = COALESCE (?, email), " +
                 "fullname = COALESCE (?, fullname)" +
-                "WHERE LOWER (nickname) = LOWER (?)";
+                "WHERE LOWER (nickname COLLATE \"ucs_basic\") = LOWER (? COLLATE \"ucs_basic\")";
         final int rows = template.update(query, about, email, fullname, nickname);
         if (rows == 0) {
             LOGGER.info("Error update user profile because user with such nickname does not exist!");
@@ -87,7 +62,7 @@ public class UserService {
 
     public User getUserByNickname(String nickname) {
         try {
-            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (nickname) = ?", Mappers.userMapper, nickname.toLowerCase());
+            return template.queryForObject("SELECT * FROM \"user\" WHERE LOWER (nickname COLLATE \"ucs_basic\") = (? COLLATE \"ucs_basic\")", Mappers.userMapper, nickname.toLowerCase());
         }
         catch (EmptyResultDataAccessException e) {
             return null;
@@ -107,12 +82,12 @@ public class UserService {
         return template.queryForObject("SELECT COUNT(*) FROM \"user\"", Mappers.countMapper);
     }
 
-    public List<User> getUsersForum (String forumSlug, int limit, String since, boolean desc) {
+    public List<User> getUsersForum (int forumId, int limit, String since, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
-        params.add(forumSlug);
+        params.add(forumId);
         final String sort;
         final String createdSign;
-        String sinceCreated = ""; //переписать на StringBuilder
+        String sinceCreated = "";
         if (desc) {
             sort = "DESC";
             createdSign = "<";
@@ -121,18 +96,20 @@ public class UserService {
             createdSign = ">";
         }
         if (since != null) {
-            sinceCreated = "WHERE LOWER (nickname COLLATE \"ucs_basic\") " + createdSign + " LOWER (? COLLATE \"ucs_basic\") ";
+            sinceCreated = "AND LOWER (nickname COLLATE \"ucs_basic\") " + createdSign + " LOWER (? COLLATE \"ucs_basic\") ";
             params.add(since);
         }
-        final String query = "SELECT DISTINCT u.id, about, nickname COLLATE \"ucs_basic\", fullname, email, LOWER (nickname COLLATE \"ucs_basic\") AS trash FROM \"user\" u " +
-                "LEFT JOIN thread t ON (u.id = t.user_id) " +
-                "LEFT JOIN post p ON (u.id = p.user_id) " +
-                "JOIN forum f ON (LOWER (f.slug) = LOWER (?) AND (f.id = t.forum_id OR f.id = p.forum_id)) " +
+
+//        ﻿EXPLAIN SELECT id, about, nickname COLLATE "ucs_basic", fullname, email FROM "user"
+//        WHERE id IN (SELECT user_id FROM users_forum WHERE forum_id = 399)
+//        ORDER BY LOWER (nickname COLLATE "ucs_basic") DESC LIMIT 100
+
+        final String query = "SELECT id, about, nickname COLLATE \"ucs_basic\", fullname, email FROM \"user\" " +
+                "WHERE id IN (SELECT user_id FROM users_forum WHERE forum_id = ?) " +
                 sinceCreated +
                 " ORDER BY LOWER (nickname COLLATE \"ucs_basic\") " + sort + " LIMIT ?";
+
         params.add(limit);
         return template.query(query, Mappers.userMapper, params.toArray());
     }
-
-
 }

@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,27 +32,6 @@ public class ThreadService {
         final String clearTable = "TRUNCATE TABLE thread CASCADE";
         template.execute(clearTable);
         LOGGER.info("Table thread was cleared");
-    }
-
-    public void deleteTable() {
-        final String dropTable = "DROP TABLE IF EXISTS thread CASCADE";
-        template.execute(dropTable);
-        LOGGER.info("Table thread was dropped");
-    }
-
-    public void createTable() {
-        final String createTableThreads = "CREATE TABLE IF NOT EXISTS  thread (" +
-                "id SERIAL NOT NULL PRIMARY KEY," +
-                "user_id INT REFERENCES \"user\"(id) NOT NULL," +
-                "created TIMESTAMP," +
-                "forum_id INT REFERENCES forum(id) NOT NULL," +
-                "message TEXT," +
-                "slug VARCHAR(100)," +
-                "title VARCHAR(100) NOT NULL)";
-        template.execute(createTableThreads);
-        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_thread ON thread (LOWER(slug))";
-        template.execute(createUniqueSlug);
-        LOGGER.info("Table thread created!");
     }
 
     public Thread create(Thread thread) {

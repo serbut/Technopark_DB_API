@@ -22,7 +22,6 @@ import java.util.ArrayList;
 /**
  * Created by sergey on 05.03.17.
  */
-@SuppressWarnings("unchecked")
 @RestController
 @RequestMapping(path = "/api/post")
 class PostController {

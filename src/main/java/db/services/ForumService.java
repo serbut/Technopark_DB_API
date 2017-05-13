@@ -5,13 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 /**
  * Created by sergey on 26.02.17.
@@ -29,26 +24,6 @@ public class ForumService {
         final String clearTable = "TRUNCATE TABLE forum CASCADE";
         template.execute(clearTable);
         LOGGER.info("Table forum was cleared");
-    }
-
-    public void deleteTable() {
-        final String dropTable = "DROP TABLE IF EXISTS forum CASCADE";
-        template.execute(dropTable);
-        final String dropUniqueSlug = "DROP INDEX IF EXISTS unique_slug_forum";
-        template.execute(dropUniqueSlug);
-        LOGGER.info("Table forum was dropped");
-    }
-
-    public void createTable() {
-        final String createTable = "CREATE TABLE IF NOT EXISTS  forum (" +
-                "id SERIAL NOT NULL PRIMARY KEY," +
-                "slug VARCHAR(100)," +
-                "title VARCHAR(100) NOT NULL," +
-                "user_id INT REFERENCES \"user\"(id) NOT NULL)";
-        template.execute(createTable);
-        final String createUniqueSlug = "CREATE UNIQUE INDEX unique_slug_forum ON forum (LOWER(slug))";
-        template.execute(createUniqueSlug);
-        LOGGER.info("Table forum created!");
     }
 
     public Forum create(Forum forum) {

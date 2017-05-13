@@ -36,19 +36,6 @@ class ServiceController {
         userService.clearTable();
         forumService.clearTable();
     }
-    @RequestMapping(path = "/api/service/create", method = RequestMethod.GET)
-    public void createAllTables() {
-        voteService.deleteTable();
-        postService.deleteTable();
-        threadService.deleteTable();
-        userService.deleteTable();
-        forumService.deleteTable();
-        userService.createTable();
-        forumService.createTable();
-        threadService.createTable();
-        postService.createTable();
-        voteService.createTable();
-    }
 
     @RequestMapping(path = "/api/service/status", method = RequestMethod.GET)
     public ResponseEntity getStatus() {
