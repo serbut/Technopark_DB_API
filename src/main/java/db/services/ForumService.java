@@ -18,18 +18,15 @@ public class ForumService {
     public ForumService(JdbcTemplate template) {
         this.template = template;
     }
-//    private static final Logger LOGGER = LoggerFactory.getLogger(ForumService.class.getName());
 
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE forum CASCADE";
         template.execute(clearTable);
-//        LOGGER.info("Table forum was cleared");
     }
 
     public Forum create(Forum forum) {
         template.update("INSERT INTO forum (slug, title, user_id) VALUES (?, ?," +
                 "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)))", forum.getSlug(), forum.getTitle(), forum.getUser());
-//        LOGGER.info("Forum with slug \"{}\" created", forum.getSlug());
         return forum;
     }
 

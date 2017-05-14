@@ -82,11 +82,9 @@ class UserController {
              user = userService.update(about, email, fullname, nickname);
         }
         catch (DuplicateKeyException e) {
-//            LOGGER.info("Error updating user - duplicate values exists!");
             return ResponseEntity.status(HttpStatus.CONFLICT).body("");
         }
         if (user == null) {
-//            LOGGER.info("Error updating user - user doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(user);

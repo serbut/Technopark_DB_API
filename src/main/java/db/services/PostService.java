@@ -28,12 +28,11 @@ public class PostService {
         this.template = template;
     }
 
-//    private static final Logger LOGGER = LoggerFactory.getLogger(PostService.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(PostService.class.getName());
 
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE post CASCADE";
         template.execute(clearTable);
-//        LOGGER.info("Table post was cleared");
     }
 
     public List<Post> create(List<Post> posts) {
@@ -128,7 +127,6 @@ public class PostService {
                 "WHERE id = ?";
         final int rows = template.update(query, message, id);
         if (rows == 0) {
-//            LOGGER.info("Error update thread profile because post with such id does not exist!");
             return null;
         }
         return getPostById(id);

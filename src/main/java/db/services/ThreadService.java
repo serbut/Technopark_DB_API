@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,17 +27,14 @@ public class ThreadService {
         this.template = template;
     }
 
-//    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadService.class.getName());
-
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE thread CASCADE";
         template.execute(clearTable);
-//        LOGGER.info("Table thread was cleared");
     }
 
     public Thread create(Thread thread) {
         if (thread.getCreated() != null) {
-            Timestamp time = Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME));
+            Timestamp time = new Timestamp(ZonedDateTime.parse(ZonedDateTime.parse(thread.getCreated()).format(DateTimeFormatter.ISO_INSTANT)).toLocalDateTime().toInstant(ZoneOffset.UTC).toEpochMilli());
             thread.setId(template.queryForObject("INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
                             "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
                             "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(), time,
@@ -50,7 +46,6 @@ public class ThreadService {
                     thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         }
         template.update("UPDATE forum SET threads = threads + 1 WHERE slug = ?", thread.getForum());
-//        LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
         return thread;
     }
 
@@ -61,7 +56,6 @@ public class ThreadService {
                 "WHERE id = ?";
         final int rows = template.update(query, message, title, id);
         if (rows == 0) {
-//            LOGGER.info("Error update thread because thread with such slug does not exist!");
             return null;
         }
         return getThreadById(id);
@@ -97,9 +91,9 @@ public class ThreadService {
         }
     }
 
-    public List<Thread> getThreads(String forumSlug, int limit, String sinceString, boolean desc) {
+    public List<Thread> getThreads(int forumId, int limit, String sinceString, boolean desc) {
         final ArrayList<Object> params = new ArrayList<>();
-        params.add(forumSlug);
+        params.add(forumId);
         final String sort;
         final String createdSign;
         if (desc) {
@@ -112,10 +106,10 @@ public class ThreadService {
         String sinceCreated = " ";
         if (sinceString != null) {
             sinceCreated = "WHERE created " + createdSign + " ? ";
-            params.add(new Timestamp(ZonedDateTime.parse(ZonedDateTime.parse(sinceString).format(DateTimeFormatter.ISO_DATE_TIME)).toLocalDateTime().toInstant(ZoneOffset.UTC).toEpochMilli()));
+            params.add(new Timestamp(ZonedDateTime.parse(ZonedDateTime.parse(sinceString).format(DateTimeFormatter.ISO_INSTANT)).toLocalDateTime().toInstant(ZoneOffset.UTC).toEpochMilli()));
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
-                "JOIN forum f ON (t.forum_id = f.id AND LOWER(f.slug) = LOWER(?))" +
+                "JOIN forum f ON (t.forum_id = f.id AND f.id = ?)" +
                 "JOIN \"user\" u ON (u.id = t.user_id) " + sinceCreated +
                 " ORDER BY created " + sort + " LIMIT ?";
         params.add(limit);

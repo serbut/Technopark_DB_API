@@ -24,12 +24,10 @@ public class UserService {
     public UserService(JdbcTemplate template) {
         this.template = template;
     }
-//    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());
 
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE \"user\" CASCADE";
         template.execute(clearTable);
-//        LOGGER.info("Table user was cleared");
     }
 
     public User create(String about, String email, String fullname, String nickname) {
@@ -39,10 +37,8 @@ public class UserService {
             template.update(query, about, nickname, fullname, email);
         }
         catch (DuplicateKeyException e) {
-//            LOGGER.info("Error creating user - user already exists!");
             return null;
         }
-//        LOGGER.info("User with nickname \"{}\" and email \"{}\" created", nickname, email);
         return user;
     }
 
@@ -54,7 +50,6 @@ public class UserService {
                 "WHERE LOWER (nickname COLLATE \"ucs_basic\") = LOWER (? COLLATE \"ucs_basic\")";
         final int rows = template.update(query, about, email, fullname, nickname);
         if (rows == 0) {
-//            LOGGER.info("Error update user profile because user with such nickname does not exist!");
             return null;
         }
         return getUserByNickname(nickname);

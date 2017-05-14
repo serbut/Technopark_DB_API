@@ -20,12 +20,9 @@ public class VoteService {
         this.template = template;
     }
 
-//    private static final Logger LOGGER = LoggerFactory.getLogger(VoteService.class.getName());
-
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE vote CASCADE";
         template.execute(clearTable);
-//        LOGGER.info("Table vote was dropped");
     }
 
     public int addVote(Vote vote) {
@@ -35,12 +32,10 @@ public class VoteService {
             final String query = "INSERT INTO vote (user_id, voice, thread_id) VALUES (" +
                     "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, ?)";
             template.update(query, vote.getAuthor(), vote.getVoice(), vote.getThreadId());
-//            LOGGER.info("Vote added");
         } else {
             final String query = "UPDATE vote SET voice = ? " +
                     "WHERE user_id IN (SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)) AND thread_id = ?";
             template.update(query, vote.getVoice(), vote.getAuthor(), vote.getThreadId());
-//            LOGGER.info("Vote updated");
         }
         return template.queryForObject("UPDATE thread SET votes = (SELECT SUM(voice) as votes FROM vote " +
                 "WHERE (thread_id) = ?) WHERE id = ? RETURNING votes", Mappers.voteMapper, vote.getThreadId(), vote.getThreadId());
