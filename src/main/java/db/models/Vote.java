@@ -8,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Vote {
     @JsonProperty("nickname")
     private String author;
-    @JsonProperty("voice")
     private byte voice;
     private int threadId;
 

@@ -27,7 +27,7 @@ class UserController {
         this.userService = userService;
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class.getName());
 
     @RequestMapping(path = "/{nickname}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity createUser(@PathVariable(value="nickname") String nickname, @RequestBody User body) {
@@ -46,7 +46,7 @@ class UserController {
                 dupEmail = user.getEmail();
             }
             catch (NullPointerException e) {
-                LOGGER.info("There is no user with such nickname");
+//                LOGGER.info("There is no user with such nickname");
             }
             if (dupEmail != null && !(email.toLowerCase()).equals(dupEmail.toLowerCase()) || dupEmail == null) { //если email найденного пользователя совпадает, то нового искать не надо
                 try {
@@ -55,7 +55,7 @@ class UserController {
                         duplicates.add(user);
                     }
                 } catch (NullPointerException e) {
-                    LOGGER.info("There is no user with such email");
+//                    LOGGER.info("There is no user with such email");
                 }
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body(duplicates);
@@ -82,11 +82,11 @@ class UserController {
              user = userService.update(about, email, fullname, nickname);
         }
         catch (DuplicateKeyException e) {
-            LOGGER.info("Error updating user - duplicate values exists!");
+//            LOGGER.info("Error updating user - duplicate values exists!");
             return ResponseEntity.status(HttpStatus.CONFLICT).body("");
         }
         if (user == null) {
-            LOGGER.info("Error updating user - user doesn't exists!");
+//            LOGGER.info("Error updating user - user doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(user);

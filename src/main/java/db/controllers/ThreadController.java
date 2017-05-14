@@ -23,7 +23,7 @@ import static org.apache.el.lang.ELArithmetic.isNumber;
 @RestController
 @RequestMapping(path = "/api/thread")
 class ThreadController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadController.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadController.class.getName());
 
     private UserService userService;
     private ThreadService threadService;
@@ -42,7 +42,7 @@ class ThreadController {
     public ResponseEntity getSingleThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId) {
         final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
-            LOGGER.info("Thread with such slug not found!");
+//            LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.ok(thread);
@@ -52,7 +52,7 @@ class ThreadController {
     public ResponseEntity updateThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
         Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
-            LOGGER.info("Thread with such slug not found!");
+//            LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final String message = body.getMessage();
@@ -60,11 +60,11 @@ class ThreadController {
         try {
             thread = threadService.update(thread.getId(), message, title);
         } catch (DuplicateKeyException e) {
-            LOGGER.info("Error updating thread - duplicate values exists!");
+//            LOGGER.info("Error updating thread - duplicate values exists!");
             return ResponseEntity.status(HttpStatus.CONFLICT).body("");
         }
         if (thread == null) {
-            LOGGER.info("Error updating thread - thread doesn't exists!");
+//            LOGGER.info("Error updating thread - thread doesn't exists!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.OK).body(thread);
@@ -74,7 +74,7 @@ class ThreadController {
     public ResponseEntity<Object> createPost(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
         final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
-            LOGGER.info("Error creating posts - thread with such slug/id not found!");
+//            LOGGER.info("Error creating posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         for (Post post : body) {
@@ -83,7 +83,7 @@ class ThreadController {
             if (parentId != 0) {
                 final Post parentPost = postService.getPostById(parentId);
                 if (parentPost == null || parentPost.getThreadId() != thread.getId()) {
-                    LOGGER.info("Error creating post - parent is not in this thread!");
+//                    LOGGER.info("Error creating post - parent is not in this thread!");
                     return ResponseEntity.status(HttpStatus.CONFLICT).body("");
                 }
             }
@@ -104,7 +104,7 @@ class ThreadController {
                                    @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
-            LOGGER.info("Error getting posts - thread with such slug/id not found!");
+//            LOGGER.info("Error getting posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         int markerInt = Integer.parseInt(marker);
@@ -139,14 +139,14 @@ class ThreadController {
         final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
 
         if (thread == null) {
-            LOGGER.info("Error creating vote - thread with such slug/id not found!");
+//            LOGGER.info("Error creating vote - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         String author = body.getAuthor();
         try { // этот блок вынести
             author = userService.getUserByNickname(author).getNickname();//убрать это
         } catch (NullPointerException e) {
-            LOGGER.info("Error creating vote - user not found!");
+//            LOGGER.info("Error creating vote - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final byte voice = body.getVoice();

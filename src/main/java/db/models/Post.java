@@ -8,15 +8,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Post {
     private int id;
-    @JsonProperty("author")
     private String author;
-    @JsonProperty("created")
     private String created;
-    @JsonProperty("forum")
     private String forum;
-    @JsonProperty("isEdited")
     private boolean isEdited;
-    @JsonProperty("message")
     private String message;
     @JsonProperty("thread")
     private int threadId;
@@ -25,16 +20,6 @@ public class Post {
 
     @SuppressWarnings("unused")
     private Post() {
-    }
-
-    public Post(String author, String created, String forum, String message, boolean isEdited, int parentId, int threadId) {
-        this.author = author;
-        this.created = created;
-        this.isEdited = isEdited;
-        this.forum = forum;
-        this.message = message;
-        this.parentId = parentId;
-        this.threadId = threadId;
     }
 
     public Post(int id, String author, String created, String forum, String message, boolean isEdited, int parentId, int threadId) {

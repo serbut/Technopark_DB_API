@@ -20,6 +20,7 @@ DROP INDEX IF EXISTS idx_post_created;
 DROP INDEX IF EXISTS idx_post_thread_id;
 DROP INDEX IF EXISTS idx_thread_created;
 DROP INDEX IF EXISTS idx_post_parent_thread;
+DROP INDEX IF EXISTS idx_post_parent;
 
 DROP TRIGGER IF EXISTS post_insert_trigger ON post;
 DROP TRIGGER IF EXISTS thread_insert_trigger ON thread;
@@ -76,6 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_post_forum_id ON post(forum_id);
 CREATE INDEX IF NOT EXISTS idx_post_thread_id ON post(thread_id);
 CREATE INDEX IF NOT EXISTS idx_post_created ON post(created);
 CREATE INDEX IF NOT EXISTS idx_post_path ON post((path[1]));
+CREATE INDEX IF NOT EXISTS idx_post_parent ON post(parent_id);
 CREATE INDEX IF NOT EXISTS idx_post_parent_thread ON post(id, parent_id, thread_id);
 
 CREATE TABLE IF NOT EXISTS vote (

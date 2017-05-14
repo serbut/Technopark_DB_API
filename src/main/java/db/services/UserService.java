@@ -24,12 +24,12 @@ public class UserService {
     public UserService(JdbcTemplate template) {
         this.template = template;
     }
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class.getName());
 
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE \"user\" CASCADE";
         template.execute(clearTable);
-        LOGGER.info("Table user was cleared");
+//        LOGGER.info("Table user was cleared");
     }
 
     public User create(String about, String email, String fullname, String nickname) {
@@ -39,10 +39,10 @@ public class UserService {
             template.update(query, about, nickname, fullname, email);
         }
         catch (DuplicateKeyException e) {
-            LOGGER.info("Error creating user - user already exists!");
+//            LOGGER.info("Error creating user - user already exists!");
             return null;
         }
-        LOGGER.info("User with nickname \"{}\" and email \"{}\" created", nickname, email);
+//        LOGGER.info("User with nickname \"{}\" and email \"{}\" created", nickname, email);
         return user;
     }
 
@@ -54,7 +54,7 @@ public class UserService {
                 "WHERE LOWER (nickname COLLATE \"ucs_basic\") = LOWER (? COLLATE \"ucs_basic\")";
         final int rows = template.update(query, about, email, fullname, nickname);
         if (rows == 0) {
-            LOGGER.info("Error update user profile because user with such nickname does not exist!");
+//            LOGGER.info("Error update user profile because user with such nickname does not exist!");
             return null;
         }
         return getUserByNickname(nickname);
@@ -99,10 +99,6 @@ public class UserService {
             sinceCreated = "AND LOWER (nickname COLLATE \"ucs_basic\") " + createdSign + " LOWER (? COLLATE \"ucs_basic\") ";
             params.add(since);
         }
-
-//        ﻿EXPLAIN SELECT id, about, nickname COLLATE "ucs_basic", fullname, email FROM "user"
-//        WHERE id IN (SELECT user_id FROM users_forum WHERE forum_id = 399)
-//        ORDER BY LOWER (nickname COLLATE "ucs_basic") DESC LIMIT 100
 
         final String query = "SELECT id, about, nickname COLLATE \"ucs_basic\", fullname, email FROM \"user\" " +
                 "WHERE id IN (SELECT user_id FROM users_forum WHERE forum_id = ?) " +

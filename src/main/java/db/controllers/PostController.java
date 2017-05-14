@@ -26,7 +26,7 @@ import java.util.ArrayList;
 @RequestMapping(path = "/api/post")
 class PostController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PostController.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(PostController.class.getName());
 
     private ThreadService threadService;
     private UserService userService;
@@ -46,7 +46,7 @@ class PostController {
                                          @RequestParam(name = "related", required = false) ArrayList<String> related) {
         final Post post = postService.getPostById(postId);
         if (post == null) {
-            LOGGER.info("Post with such id not found!");
+//            LOGGER.info("Post with such id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         User author = null;
@@ -71,7 +71,7 @@ class PostController {
         final String message = body.getMessage();
         Post post = postService.getPostById(postId);
         if (post == null) {
-            LOGGER.info("Post with such id not found!");
+//            LOGGER.info("Post with such id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         if (message != null && !message.equals(post.getMessage())) {

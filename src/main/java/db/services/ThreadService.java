@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,12 +28,12 @@ public class ThreadService {
         this.template = template;
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadService.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(ThreadService.class.getName());
 
     public void clearTable() {
         final String clearTable = "TRUNCATE TABLE thread CASCADE";
         template.execute(clearTable);
-        LOGGER.info("Table thread was cleared");
+//        LOGGER.info("Table thread was cleared");
     }
 
     public Thread create(Thread thread) {
@@ -48,9 +50,8 @@ public class ThreadService {
                     thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         }
         template.update("UPDATE forum SET threads = threads + 1 WHERE slug = ?", thread.getForum());
-        LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
-//        return thread;
-        return getThreadById(thread.getId());
+//        LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
+        return thread;
     }
 
     public Thread update(int id, String message, String title) {
@@ -60,7 +61,7 @@ public class ThreadService {
                 "WHERE id = ?";
         final int rows = template.update(query, message, title, id);
         if (rows == 0) {
-            LOGGER.info("Error update thread because thread with such slug does not exist!");
+//            LOGGER.info("Error update thread because thread with such slug does not exist!");
             return null;
         }
         return getThreadById(id);
@@ -111,7 +112,7 @@ public class ThreadService {
         String sinceCreated = " ";
         if (sinceString != null) {
             sinceCreated = "WHERE created " + createdSign + " ? ";
-            params.add(new Timestamp(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME)).toInstant().toEpochMilli()));
+            params.add(new Timestamp(ZonedDateTime.parse(ZonedDateTime.parse(sinceString).format(DateTimeFormatter.ISO_DATE_TIME)).toLocalDateTime().toInstant(ZoneOffset.UTC).toEpochMilli()));
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND LOWER(f.slug) = LOWER(?))" +

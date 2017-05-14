@@ -7,11 +7,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Forum {
     private int id;
-    @JsonProperty("slug")
     private String slug;
-    @JsonProperty("title")
     private String title;
-    @JsonProperty("user")
     private String user;
     private int posts;
     private int threads;

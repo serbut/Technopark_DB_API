@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/api/forum")
 class ForumController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ForumController.class.getName());
+//    private static final Logger LOGGER = LoggerFactory.getLogger(ForumController.class.getName());
 
     private ForumService forumService;
     private UserService userService;
@@ -45,14 +45,14 @@ class ForumController {
             userNickname = userService.getUserByNickname(userNickname).getNickname();//убрать это
             forum = forumService.create(new Forum(slug, title, userNickname));
         } catch (NullPointerException e) { //убрать это
-            LOGGER.info("Error creating forum - user not found!");
+//            LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         } catch (DuplicateKeyException e) {
-            LOGGER.info("Error creating forum - forum already exists!");
+//            LOGGER.info("Error creating forum - forum already exists!");
             forum = forumService.getForumBySlug(slug);
             return ResponseEntity.status(HttpStatus.CONFLICT).body(forum);
         } catch (DataAccessException e) {
-            LOGGER.info("Error creating forum - user not found!");
+//            LOGGER.info("Error creating forum - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(forum);
@@ -92,19 +92,19 @@ class ForumController {
             forumSlug = forumService.getForumBySlug(forumSlug).getSlug();//и это!
             thread = threadService.create(new Thread(author, created, forumSlug, message, slug, title));
         } catch (NullPointerException e) { //убрать это
-            LOGGER.info("Error creating thread - user not found!");
+//            LOGGER.info("Error creating thread - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         } catch (DuplicateKeyException e) {
             try {
                 thread = threadService.getThreadBySlug(slug);
             }
             catch (NullPointerException ex) {
-                LOGGER.info("There is no thread with such slug");
+//                LOGGER.info("There is no thread with such slug");
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body(thread);
         }
         catch (DataAccessException e) {
-            LOGGER.info("Error creating thread - user not found!");
+//            LOGGER.info("Error creating thread - user not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(thread);
@@ -117,7 +117,7 @@ class ForumController {
                                      @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
         final Forum forum = forumService.getForumBySlug(forumSlug); // наверное лучше убрать
         if (forum == null) {
-            LOGGER.info("Error getting threads - forum with such slug not found!");
+//            LOGGER.info("Error getting threads - forum with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
         }
         final List<Thread> threads = threadService.getThreads(forumSlug, limit, sinceString, desc);
