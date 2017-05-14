@@ -35,32 +35,43 @@ public class ThreadService {
     }
 
     public Thread create(Thread thread) {
-        Timestamp time;
         if (thread.getCreated() != null) {
-            time = Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME).minusHours(3));
+            Timestamp time = Timestamp.valueOf(LocalDateTime.parse(thread.getCreated(), DateTimeFormatter.ISO_DATE_TIME));
+            thread.setId(template.queryForObject("INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
+                            "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
+                            "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(), time,
+                    thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         } else {
-            time = new Timestamp(System.currentTimeMillis());
+            thread.setId(template.queryForObject("INSERT INTO thread (user_id, forum_id, message, slug, title) VALUES (" +
+                            "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), " +
+                            "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(),
+                    thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         }
-        thread.setId(template.queryForObject("INSERT INTO thread (user_id, created, forum_id, message, slug, title) VALUES (" +
-                        "(SELECT id FROM \"user\" WHERE LOWER(nickname) = LOWER(?)), ?, " +
-                        "(SELECT id FROM forum WHERE LOWER (slug) = LOWER(?)), ?, ?, ?) RETURNING id", Mappers.idMapper, thread.getAuthor(), time,
-                thread.getForum(), thread.getMessage(), thread.getSlug(), thread.getTitle()));
         template.update("UPDATE forum SET threads = threads + 1 WHERE slug = ?", thread.getForum());
         LOGGER.info("Thread with title \"{}\" created", thread.getTitle());
-        return thread;
+//        return thread;
+        return getThreadById(thread.getId());
     }
 
-    public Thread update(String slug, String message, String title) {
+    public Thread update(int id, String message, String title) {
         final String query = "UPDATE thread SET " +
                 "message = COALESCE (?, message), " +
                 "title = COALESCE (?, title)" +
-                "WHERE LOWER (slug) = LOWER (?)";
-        final int rows = template.update(query, message, title, slug);
+                "WHERE id = ?";
+        final int rows = template.update(query, message, title, id);
         if (rows == 0) {
-            LOGGER.info("Error update thread profile because thread with such slug does not exist!");
+            LOGGER.info("Error update thread because thread with such slug does not exist!");
             return null;
         }
-        return getThreadBySlug(slug);
+        return getThreadById(id);
+    }
+
+    public Thread getThreadBySlugOrId(String threadSlugOrId) {
+        if (threadSlugOrId.matches("[-+]?\\d*\\.?\\d+")) {
+            return getThreadById(Integer.parseInt(threadSlugOrId));
+        } else {
+            return getThreadBySlug(threadSlugOrId);
+        }
     }
 
     public Thread getThreadBySlug(String slug) {
@@ -79,7 +90,7 @@ public class ThreadService {
             return template.queryForObject("SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                     "JOIN forum f ON (t.forum_id = f.id)" +
                     "JOIN \"user\" u ON (u.id = t.user_id)" +
-                    "WHERE (t.id) = ?", Mappers.threadMapper, id);
+                    "WHERE t.id = ?", Mappers.threadMapper, id);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
@@ -100,7 +111,7 @@ public class ThreadService {
         String sinceCreated = " ";
         if (sinceString != null) {
             sinceCreated = "WHERE created " + createdSign + " ? ";
-            params.add(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
+            params.add(new Timestamp(Timestamp.valueOf(LocalDateTime.parse(sinceString, DateTimeFormatter.ISO_DATE_TIME)).toInstant().toEpochMilli()));
         }
         final String query = "SELECT t.id, nickname, created, f.slug as forum_slug, message, t.slug, t.title, votes FROM thread t " +
                 "JOIN forum f ON (t.forum_id = f.id AND LOWER(f.slug) = LOWER(?))" +

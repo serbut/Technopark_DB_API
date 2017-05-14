@@ -17,11 +17,12 @@ DROP INDEX IF EXISTS idx_post_forum_id;
 DROP INDEX IF EXISTS idx_uf_forum;
 DROP INDEX IF EXISTS idx_uf_user;
 DROP INDEX IF EXISTS idx_post_created;
+DROP INDEX IF EXISTS idx_post_thread_id;
 DROP INDEX IF EXISTS idx_thread_created;
+DROP INDEX IF EXISTS idx_post_parent_thread;
 
 DROP TRIGGER IF EXISTS post_insert_trigger ON post;
 DROP TRIGGER IF EXISTS thread_insert_trigger ON thread;
-
 
 CREATE TABLE IF NOT EXISTS "user" (
                 id SERIAL NOT NULL PRIMARY KEY,
@@ -47,7 +48,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_forum ON forum (LOWER(slug));
 CREATE TABLE IF NOT EXISTS thread (
                 id SERIAL NOT NULL PRIMARY KEY,
                 user_id INT REFERENCES "user"(id) NOT NULL,
-                created TIMESTAMP NOT NULL,
+                created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 forum_id INT REFERENCES forum(id) NOT NULL,
                 message TEXT,
                 slug VARCHAR(100),
@@ -72,8 +73,10 @@ CREATE TABLE IF NOT EXISTS post (
 
 CREATE INDEX IF NOT EXISTS idx_post_user ON post(user_id);
 CREATE INDEX IF NOT EXISTS idx_post_forum_id ON post(forum_id);
+CREATE INDEX IF NOT EXISTS idx_post_thread_id ON post(thread_id);
 CREATE INDEX IF NOT EXISTS idx_post_created ON post(created);
-CREATE INDEX IF NOT EXISTS idx_post_path ON post(path);
+CREATE INDEX IF NOT EXISTS idx_post_path ON post((path[1]));
+CREATE INDEX IF NOT EXISTS idx_post_parent_thread ON post(id, parent_id, thread_id);
 
 CREATE TABLE IF NOT EXISTS vote (
                 id SERIAL NOT NULL PRIMARY KEY,

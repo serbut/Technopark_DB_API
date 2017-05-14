@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static org.apache.el.lang.ELArithmetic.isNumber;
+
 /**
  * Created by sergeybutorin on 27.02.17.
  */
@@ -38,12 +40,7 @@ class ThreadController {
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.GET, produces = "application/json")
     public ResponseEntity getSingleThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId) {
-        Thread thread;
-        try {
-            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch (NumberFormatException e) {
-            thread = threadService.getThreadBySlug(threadSlugOrId);
-        }
+        final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
             LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
@@ -53,12 +50,7 @@ class ThreadController {
 
     @RequestMapping(path = "/{thread_slug_or_id}/details", method = RequestMethod.POST, produces = "application/json")
     public ResponseEntity updateThread(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody Thread body) {
-        Thread thread;
-        try {
-            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch (NumberFormatException e) {
-            thread = threadService.getThreadBySlug(threadSlugOrId);
-        }
+        Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
             LOGGER.info("Thread with such slug not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
@@ -66,7 +58,7 @@ class ThreadController {
         final String message = body.getMessage();
         final String title = body.getTitle();
         try {
-            thread = threadService.update(thread.getSlug(), message, title);
+            thread = threadService.update(thread.getId(), message, title);
         } catch (DuplicateKeyException e) {
             LOGGER.info("Error updating thread - duplicate values exists!");
             return ResponseEntity.status(HttpStatus.CONFLICT).body("");
@@ -80,12 +72,7 @@ class ThreadController {
 
     @RequestMapping(path = "/{thread_slug_or_id}/create", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity<Object> createPost(@PathVariable(value = "thread_slug_or_id") String threadSlugOrId, @RequestBody List<Post> body) {
-        Thread thread;
-        try { // этот блок вынести
-            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch (NumberFormatException e) {
-            thread = threadService.getThreadBySlug(threadSlugOrId);
-        }
+        final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
             LOGGER.info("Error creating posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
@@ -115,12 +102,7 @@ class ThreadController {
                                    @RequestParam(name = "marker", required = false, defaultValue = "0") String marker,
                                    @RequestParam(name = "sort", required = false, defaultValue = "flat") String sort,
                                    @RequestParam(name = "desc", required = false, defaultValue = "false") boolean desc) {
-        Thread thread;
-        try { // этот блок вынести
-            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch (NumberFormatException e) {
-            thread = threadService.getThreadBySlug(threadSlugOrId);
-        }
+        final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
         if (thread == null) {
             LOGGER.info("Error getting posts - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");
@@ -154,12 +136,8 @@ class ThreadController {
 
     @RequestMapping(path = "/{thread}/vote", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
     public ResponseEntity addVote(@PathVariable(value = "thread") String threadSlugOrId, @RequestBody Vote body) {
-        Thread thread;
-        try { // этот блок вынести
-            thread = threadService.getThreadById(Integer.parseInt(threadSlugOrId));
-        } catch (NumberFormatException e) {
-            thread = threadService.getThreadBySlug(threadSlugOrId);
-        }
+        final Thread thread = threadService.getThreadBySlugOrId(threadSlugOrId);
+
         if (thread == null) {
             LOGGER.info("Error creating vote - thread with such slug/id not found!");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("");

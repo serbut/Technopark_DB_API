@@ -7,17 +7,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Thread {
     private int id;
-    @JsonProperty("author")
     private String author;
-    @JsonProperty("created")
     private String created;
-    @JsonProperty("forum")
     private String forum;
-    @JsonProperty("message")
     private String message;
-    @JsonProperty("slug")
     private String slug;
-    @JsonProperty("title")
     private String title;
     private int votes;
 
@@ -83,5 +77,9 @@ public class Thread {
 
     public void setVotes(int votes) {
         this.votes = votes;
+    }
+
+    public void setCreated(String created) {
+        this.created = created;
     }
 }
